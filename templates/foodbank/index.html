@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}{{ t.fb_title }}{% endblock %}
+{% block content %}
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+  <div>
+    <h1 style="font-size:2rem;font-weight:800;color:var(--green);">{{ t.fb_title }}</h1>
+    <p style="color:var(--text2);">{{ t.fb_subtitle }}</p>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <a href="{{ url_for('foodbank.my_donations') }}" class="btn-secondary" style="font-size:.88rem;padding:9px 16px;">{{ t.fb_my_donations }}</a>
+    <a href="{{ url_for('foodbank.my_claims') }}"   class="btn-secondary" style="font-size:.88rem;padding:9px 16px;">{{ t.fb_my_claims }}</a>
+    <a href="{{ url_for('foodbank.donate') }}"      class="btn-primary"   style="font-size:.88rem;padding:9px 16px;">{{ t.fb_donate }}</a>
+  </div>
+</div>
+
+<!-- LIVE MAP -->
+<div class="card" style="margin-bottom:24px;">
+  <h2 class="section-title">{{ t.fb_map }}</h2>
+  <div id="map" style="height:420px;border-radius:10px;"></div>
+</div>
+
+<!-- LISTINGS GRID -->
+<h2 class="section-title">{{ t.fb_listings }}</h2>
+{% if listings %}
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+  {% for item in listings %}
+  <div class="card" style="border-top:4px solid var(--green);">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+      <div style="font-size:2rem;">🍱</div>
+      <span class="badge-{{ 'green' if item.status=='available' else ('yellow' if item.status=='claimed' else 'red') }}">
+        {{ t.fb_available if item.status=='available' else (t.fb_claimed if item.status=='claimed' else t.fb_expired) }}
+      </span>
+    </div>
+    <h3 style="font-size:1rem;font-weight:700;margin-bottom:6px;">{{ item.food_name }}</h3>
+    <div style="color:var(--text2);font-size:.85rem;margin-bottom:4px;">📦 {{ item.quantity }}</div>
+    <div style="color:var(--text2);font-size:.85rem;margin-bottom:4px;">📍 {{ item.location }}</div>
+    <div style="color:var(--text2);font-size:.82rem;margin-bottom:12px;">
+      ⏰ Expires: {{ item.expiry_date.strftime('%d %b, %I:%M %p') }}
+    </div>
+    {% if item.status == 'available' and item.donor_id != current_user.id %}
+    <a href="{{ url_for('foodbank.claim', listing_id=item.id) }}" class="btn-primary" style="width:100%;text-align:center;font-size:.88rem;">
+      {{ t.fb_claim }}
+    </a>
+    {% elif item.donor_id == current_user.id %}
+    <span class="badge-blue" style="display:inline-block;">{{ t.fb_your_donation }}</span>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card" style="text-align:center;padding:48px;">
+  <div style="font-size:3rem;">🤝</div>
+  <h2 style="color:var(--green);">No food listings yet!</h2>
+  <p style="color:var(--text2);margin-bottom:16px;">Be the first to donate food in your area.</p>
+  <a href="{{ url_for('foodbank.donate') }}" class="btn-primary">{{ t.fb_post }}</a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+var mapData = {{ map_data | tojson }};
+var map = L.map('map').setView([17.3850, 78.4867], 12);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap'
+}).addTo(map);
+
+mapData.forEach(function(item) {
+  var icon = L.divIcon({
+    html: '<div style="background:var(--green,#1B6B2F);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.3);">🍱</div>',
+    className: '', iconSize: [36,36], iconAnchor: [18,18]
+  });
+  L.marker([item.lat, item.lng], {icon: icon})
+   .addTo(map)
+   .bindPopup('<strong>' + item.name + '</strong><br>' + item.qty + '<br>' + item.loc +
+              '<br><a href="/foodbank/claim/' + item.id + '" style="color:#1B6B2F;font-weight:700;">Claim →</a>');
+});
+</script>
+{% endblock %}

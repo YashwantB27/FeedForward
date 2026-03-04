@@ -1,0 +1,28 @@
+{% extends 'base.html' %}{% block title %}All Users{% endblock %}
+{% block content %}
+<h1 style="font-size:2rem;font-weight:800;color:#1B6B2F;margin-bottom:24px;">👥 All Users ({{ users|length }})</h1>
+<div class="card" style="overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:.9rem;">
+    <thead><tr style="background:#E8F5E9;">
+      {% for h in ['#','Name','Email','Role','Goal','Location','Joined'] %}
+      <th style="padding:10px 12px;text-align:left;color:#1B6B2F;font-weight:700;">{{ h }}</th>
+      {% endfor %}
+      <th style="padding:10px 12px;">Action</th>
+    </tr></thead>
+    <tbody>
+    {% for u in users %}
+    <tr style="border-bottom:1px solid #F5F5F5;">
+      <td style="padding:10px 12px;">{{ u.id }}</td>
+      <td style="padding:10px 12px;font-weight:600;">{{ u.name }}</td>
+      <td style="padding:10px 12px;color:#757575;">{{ u.email }}</td>
+      <td style="padding:10px 12px;"><span class="badge-{{ 'green' if u.role=='admin' else 'yellow' }}">{{ u.role }}</span></td>
+      <td style="padding:10px 12px;">{{ u.health_goal or '--' }}</td>
+      <td style="padding:10px 12px;">{{ u.location or '--' }}</td>
+      <td style="padding:10px 12px;">{{ u.created_at.strftime('%d %b %Y') }}</td>
+      <td style="padding:10px 12px;">{% if u.role != 'admin' %}<a href="{{ url_for('admin.make_admin', uid=u.id) }}" style="color:#1565C0;font-size:.85rem;">Make Admin</a>{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

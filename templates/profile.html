@@ -1,0 +1,28 @@
+{% extends 'base.html' %}{% block title %}My Profile{% endblock %}
+{% block content %}
+<h1 style="font-size:2rem;font-weight:800;color:#1B6B2F;margin-bottom:24px;">👤 My Profile</h1>
+<div style="display:grid;grid-template-columns:1fr 2fr;gap:24px;">
+  <div class="card" style="text-align:center;">
+    <div style="width:80px;height:80px;background:#E8F5E9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;margin:0 auto 16px;font-weight:700;color:#1B6B2F;">{{ current_user.name[0] }}</div>
+    <h2 style="font-weight:800;color:#1B6B2F;">{{ current_user.name }}</h2>
+    <p style="color:#757575;">{{ current_user.email }}</p>
+    <span class="badge-green">{{ current_user.role.title() }}</span>
+    <div style="margin-top:16px;display:flex;gap:12px;justify-content:center;">
+      <div style="text-align:center;"><div style="font-size:1.5rem;font-weight:800;color:#1B6B2F;">{{ total_plans }}</div><div style="font-size:.8rem;color:#757575;">Plans</div></div>
+      <div style="text-align:center;"><div style="font-size:1.5rem;font-weight:800;color:#1565C0;">{{ total_logs }}</div><div style="font-size:.8rem;color:#757575;">Logs</div></div>
+    </div>
+    <a href="{{ url_for('main.setup_profile') }}" class="btn-secondary" style="margin-top:16px;display:block;font-size:.9rem;">✏️ Edit Profile</a>
+  </div>
+  <div class="card">
+    <h3 class="section-title">📋 Profile Details</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      {% for label,value in [('Age', (current_user.age|string + ' years') if current_user.age else 'Not set'),('Weight', (current_user.weight|string + ' kg') if current_user.weight else 'Not set'),('Height', (current_user.height|string + ' cm') if current_user.height else 'Not set'),('Gender', current_user.gender or 'Not set'),('Dietary Preference', current_user.dietary_pref or 'Not set'),('Health Goal', current_user.health_goal or 'Not set'),('Fitness Level', current_user.fitness_level or 'Not set'),('Equipment', current_user.equipment or 'Not set'),('Workout Days/Week', current_user.days_per_week|string if current_user.days_per_week else 'Not set'),('Location', current_user.location or 'Not set')] %}
+      <div style="background:#FAFAF8;border-radius:8px;padding:12px;">
+        <div style="font-size:.8rem;color:#757575;font-weight:600;">{{ label }}</div>
+        <div style="font-weight:700;color:#212121;margin-top:2px;">{{ value }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

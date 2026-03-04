@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block title %}Progress Tracker{% endblock %}
+{% block content %}
+<h1 style="font-size:2rem;font-weight:800;color:#1B6B2F;margin-bottom:24px;">📊 Progress Tracker</h1>
+
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
+  {% for icon,val,label,color in [('🔥',streak,'Workout Streak','#E65100'),('📝',logs|length,'Total Logs','#1565C0'),('⚖️',logs[0].weight if logs else '--','Latest Weight','#1B6B2F'),('💧',logs[0].water_intake if logs else '--','Last Water (L)','#00897B')] %}
+  <div class="card" style="text-align:center;border-top:4px solid {{ color }};">
+    <div style="font-size:1.5rem;">{{ icon }}</div>
+    <div style="font-size:2rem;font-weight:800;color:{{ color }};">{{ val }}</div>
+    <div style="color:#757575;font-size:.85rem;">{{ label }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;">
+  <!-- LOG FORM -->
+  <div class="card">
+    <h3 class="section-title">📝 Log Today's Progress</h3>
+    <form method="POST">
+      <div class="form-group"><label>Weight (kg)</label><input type="number" name="weight" step="0.1" value="{{ today_log.weight if today_log else '' }}" placeholder="70.5"/></div>
+      <div class="form-group"><label>Water Intake (litres)</label><input type="number" name="water" step="0.1" value="{{ today_log.water_intake if today_log else '' }}" placeholder="2.5"/></div>
+      <div class="form-group"><label>Calories Consumed</label><input type="number" name="calories_consumed" value="{{ today_log.calories_consumed if today_log else '' }}" placeholder="1800"/></div>
+      <div class="form-group"><label>Calories Burned</label><input type="number" name="calories_burned" value="{{ today_log.calories_burned if today_log else '' }}" placeholder="300"/></div>
+      <div class="form-group">
+        <label>Today's Mood</label>
+        <select name="mood">
+          <option value="great" {% if today_log and today_log.mood=='great' %}selected{% endif %}>😄 Great</option>
+          <option value="good"  {% if today_log and today_log.mood=='good'  %}selected{% endif %}>🙂 Good</option>
+          <option value="okay"  {% if today_log and today_log.mood=='okay'  %}selected{% endif %}>😐 Okay</option>
+          <option value="bad"   {% if today_log and today_log.mood=='bad'   %}selected{% endif %}>😔 Bad</option>
+        </select>
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" name="workout_done" id="wd" style="width:auto;" {% if today_log and today_log.workout_done %}checked{% endif %}/>
+        <label for="wd" style="margin:0;">Workout completed today ✅</label>
+      </div>
+      <div class="form-group"><label>Notes (optional)</label><textarea name="notes" rows="2" placeholder="How are you feeling?">{{ today_log.notes if today_log else '' }}</textarea></div>
+      <button type="submit" class="btn-primary" style="width:100%;text-align:center;">💾 Save Progress</button>
+    </form>
+  </div>
+
+  <!-- CHARTS -->
+  <div style="display:flex;flex-direction:column;gap:16px;">
+    <div class="card">
+      <h3 class="section-title">⚖️ Weight Over Time</h3>
+      <canvas id="weightChart" height="150"></canvas>
+    </div>
+    <div class="card">
+      <h3 class="section-title">🔥 Calories In vs Out</h3>
+      <canvas id="calChart" height="150"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- LOG HISTORY -->
+<div class="card">
+  <h3 class="section-title">📅 Log History</h3>
+  <div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:.9rem;">
+      <thead>
+        <tr style="background:#E8F5E9;">
+          {% for h in ['Date','Weight','Water','Cal In','Cal Out','Workout','Mood'] %}
+          <th style="padding:10px 12px;text-align:left;color:#1B6B2F;font-weight:700;white-space:nowrap;">{{ h }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr style="border-bottom:1px solid #F5F5F5;{% if loop.index is odd %}background:#FAFAF8;{% endif %}">
+          <td style="padding:10px 12px;font-weight:600;">{{ log.log_date.strftime('%d %b') }}</td>
+          <td style="padding:10px 12px;">{{ log.weight or '--' }} kg</td>
+          <td style="padding:10px 12px;">{{ log.water_intake or '--' }} L</td>
+          <td style="padding:10px 12px;">{{ log.calories_consumed or '--' }}</td>
+          <td style="padding:10px 12px;">{{ log.calories_burned or '--' }}</td>
+          <td style="padding:10px 12px;">{% if log.workout_done %}✅{% else %}❌{% endif %}</td>
+          <td style="padding:10px 12px;">{% if log.mood=='great' %}😄{% elif log.mood=='good' %}🙂{% elif log.mood=='okay' %}😐{% else %}😔{% endif %}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" style="text-align:center;padding:32px;color:#757575;">No logs yet. Start logging today!</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var data = {{ chart_data }};
+var green = '#1B6B2F', blue = '#1565C0', amber = '#FF8F00';
+
+new Chart(document.getElementById('weightChart'),{
+  type:'line',
+  data:{labels:data.dates,datasets:[{label:'Weight (kg)',data:data.weights,borderColor:green,backgroundColor:'rgba(27,107,47,.1)',borderWidth:2,pointRadius:4,tension:.3,fill:true}]},
+  options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:false}}}
+});
+
+new Chart(document.getElementById('calChart'),{
+  type:'bar',
+  data:{labels:data.dates,datasets:[
+    {label:'Consumed',data:data.cal_in,backgroundColor:'rgba(255,143,0,.7)'},
+    {label:'Burned',  data:data.cal_out,backgroundColor:'rgba(27,107,47,.7)'}
+  ]},
+  options:{responsive:true,scales:{y:{beginAtZero:true}}}
+});
+</script>
+{% endblock %}

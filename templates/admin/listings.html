@@ -1,0 +1,27 @@
+{% extends 'base.html' %}{% block title %}All Listings{% endblock %}
+{% block content %}
+<h1 style="font-size:2rem;font-weight:800;color:#1B6B2F;margin-bottom:24px;">📦 All Food Listings ({{ listings|length }})</h1>
+<div class="card" style="overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;font-size:.9rem;">
+    <thead><tr style="background:#E8F5E9;">
+      {% for h in ['Food Item','Quantity','Location','Status','Expiry','Posted'] %}
+      <th style="padding:10px 12px;text-align:left;color:#1B6B2F;font-weight:700;">{{ h }}</th>
+      {% endfor %}
+      <th>Action</th>
+    </tr></thead>
+    <tbody>
+    {% for f in listings %}
+    <tr style="border-bottom:1px solid #F5F5F5;">
+      <td style="padding:10px 12px;font-weight:600;">{{ f.food_name }}</td>
+      <td style="padding:10px 12px;">{{ f.quantity }}</td>
+      <td style="padding:10px 12px;color:#757575;">{{ f.location }}</td>
+      <td style="padding:10px 12px;"><span class="badge-{{ 'green' if f.status=='available' else 'yellow' if f.status=='claimed' else 'red' }}">{{ f.status }}</span></td>
+      <td style="padding:10px 12px;">{{ f.expiry_date.strftime('%d %b %Y') if f.expiry_date else '--' }}</td>
+      <td style="padding:10px 12px;">{{ f.posted_at.strftime('%d %b %Y') }}</td>
+      <td style="padding:10px 12px;"><a href="{{ url_for('admin.delete_listing', lid=f.id) }}" onclick="return confirm('Delete this listing?')" style="color:#C62828;font-size:.85rem;">🗑 Delete</a></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

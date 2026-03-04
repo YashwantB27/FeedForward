@@ -1,0 +1,578 @@
+{% extends 'base.html' %}
+{% block title %}Diet Planner{% endblock %}
+{% block content %}
+
+<!-- Edit Meal Modal -->
+<div id="editModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);
+     z-index:9999;align-items:center;justify-content:center;" onclick="closeEditModal(event)">
+  <div style="background:var(--surface);border-radius:14px;padding:28px;width:min(460px,95vw);"
+       onclick="event.stopPropagation()">
+    <h3 style="color:var(--green);margin-bottom:16px;">✏️ Edit Meal</h3>
+    <input type="hidden" id="editDay"/>
+    <input type="hidden" id="editSlot"/>
+    <div class="form-group">
+      <label>Meal Name</label>
+      <input type="text" id="editName" placeholder="e.g. Dal Khichdi, Grilled Chicken"/>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group">
+        <label>Calories (kcal)</label>
+        <input type="number" id="editCal" placeholder="e.g. 400"/>
+      </div>
+      <div class="form-group">
+        <label>Carbon (kg CO₂)</label>
+        <input type="number" id="editCarbon" step="0.1" placeholder="e.g. 0.5"/>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px;">
+      <button onclick="closeEditModal()" class="btn-secondary">Cancel</button>
+      <button onclick="saveMealEdit()" class="btn-primary">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:24px;">
+  <div>
+    <h1 style="font-size:2rem;font-weight:800;color:var(--green);">🥗 Diet Planner</h1>
+    <p style="color:var(--text2);">Your personalized 7-day AI meal plan</p>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <button class="btn-secondary" onclick="switchTab('plan',this)" id="tabBtnPlan"
+            style="padding:8px 16px;">📅 Meal Plan</button>
+    <button class="btn-secondary" onclick="switchTab('calc',this)" id="tabBtnCalc"
+            style="padding:8px 16px;">🔢 Calorie Calc</button>
+    <a href="{{ url_for('diet.regenerate') }}" class="btn-primary">🔄 Regenerate Plan</a>
+  </div>
+</div>
+
+<!-- TAB: MEAL PLAN -->
+<div id="tab-plan">
+
+{% if plan_data %}
+
+{% set target_cal  = plan_data.get('target_calories', 0) or 0 %}
+{% set avg_cal     = plan_data.get('weekly_avg_calories', 0) or 0 %}
+{% set avg_carbon  = plan_data.get('weekly_avg_carbon', 0) or 0 %}
+{% set bmr         = plan_data.get('bmr', 0) or 0 %}
+
+<!-- Summary cards -->
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px;margin-bottom:28px;">
+  <div class="card" style="text-align:center;">
+    <div style="font-size:1.5rem;">🎯</div>
+    <div style="font-size:1.4rem;font-weight:800;color:var(--green);">{{ target_cal | int }}</div>
+    <div style="font-size:.8rem;color:var(--text2);">Target Calories</div>
+  </div>
+  <div class="card" style="text-align:center;">
+    <div style="font-size:1.5rem;">🍽️</div>
+    <div style="font-size:1.4rem;font-weight:800;color:var(--green);">{{ avg_cal | int }}</div>
+    <div style="font-size:.8rem;color:var(--text2);">Avg Daily Calories</div>
+  </div>
+  <div class="card" style="text-align:center;">
+    <div style="font-size:1.5rem;">🌍</div>
+    <div style="font-size:1.4rem;font-weight:800;color:var(--green);">{{ avg_carbon }}</div>
+    <div style="font-size:.8rem;color:var(--text2);">Avg Carbon (kg CO₂)</div>
+  </div>
+  <div class="card" style="text-align:center;">
+    <div style="font-size:1.5rem;">💓</div>
+    <div style="font-size:1.4rem;font-weight:800;color:var(--green);">{{ bmr | int }}</div>
+    <div style="font-size:.8rem;color:var(--text2);">BMR</div>
+  </div>
+</div>
+
+<!-- 7-Day Plan -->
+<h2 style="font-size:1.3rem;font-weight:800;color:var(--green);margin-bottom:16px;">📅 Your 7-Day Meal Plan</h2>
+
+<div style="display:flex;flex-direction:column;gap:12px;margin-bottom:28px;">
+  {% for day in plan_data.get('days', []) %}
+
+  {% set day_name   = day.get('day_name') or day.get('day', 'Day ' ~ loop.index) %}
+  {% set day_cal    = day.get('total_calories', 0) or 0 %}
+  {% set day_carbon = day.get('carbon') or day.get('total_carbon', 0) or 0 %}
+  {% set day_i      = loop.index0 %}
+
+  <div class="card" style="border-left:4px solid var(--green);">
+    <div style="display:flex;justify-content:space-between;align-items:center;
+                margin-bottom:14px;cursor:pointer;" onclick="toggleDay({{ day_i }})">
+      <div style="font-weight:800;font-size:1.05rem;color:var(--green);">
+        📅 {{ day_name }}
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span class="badge-green">{{ day_cal }} kcal</span>
+        <span class="badge-{% if day_carbon < 0.5 %}green{% elif day_carbon < 1.5 %}yellow{% else %}red{% endif %}">
+          {{ day_carbon }} kg CO₂
+        </span>
+        <span id="arrow{{ day_i }}" style="color:var(--text2);font-size:.8rem;">▼</span>
+      </div>
+    </div>
+
+    <div id="dayContent{{ day_i }}" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">
+
+      {% set slots = [
+        ('breakfast', 'Breakfast', '☀️'),
+        ('lunch',     'Lunch',     '🍛'),
+        ('dinner',    'Dinner',    '🌙'),
+        ('snack',     'Snack',     '🍎'),
+      ] %}
+
+      {% for slot, slabel, sicon in slots %}
+        {% set meal       = day.get(slot) or {} %}
+        {% set mname      = meal.get('name', '') or '' %}
+        {% set mcal       = meal.get('calories') or meal.get('cal', 0) or 0 %}
+        {% set mcarbon    = meal.get('carbon', 0) or 0 %}
+        {% set mallergens = meal.get('allergens', []) or [] %}
+
+      <div style="background:var(--surface2);border-radius:10px;padding:14px;border:1.5px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+          <div style="font-size:.8rem;font-weight:700;color:var(--text2);">{{ sicon }} {{ slabel }}</div>
+          <button onclick="openEditModal({{ day_i }},'{{ slot }}','{{ mname | replace("'","") }}',{{ mcal }},{{ mcarbon }})"
+                  style="background:none;border:none;color:var(--text3);cursor:pointer;
+                         font-size:.85rem;padding:2px 6px;border-radius:4px;"
+                  title="Edit this meal">✏️</button>
+        </div>
+        <div style="font-weight:600;color:var(--text);font-size:.92rem;">
+          {{ mname if mname else '—' }}
+        </div>
+        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+          <span style="font-size:.75rem;color:var(--text2);">{{ mcal }} kcal</span>
+          <span class="badge-{% if mcarbon < 0.5 %}green{% elif mcarbon < 1.5 %}yellow{% else %}red{% endif %}"
+                style="font-size:.7rem;">{{ mcarbon }} CO₂</span>
+          {% for allergen in mallergens %}
+          <span style="background:var(--red-lt);color:var(--red);padding:2px 6px;
+                       border-radius:8px;font-size:.7rem;font-weight:600;">
+            ⚠️ {{ allergen }}
+          </span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Swap suggestions -->
+{% set swaps = plan_data.get('swap_suggestions', []) or [] %}
+{% if swaps %}
+<div class="card" style="border-left:4px solid var(--green);margin-bottom:24px;">
+  <h3 class="section-title">♻️ Low-Carbon Swap Suggestions</h3>
+  <p style="color:var(--text2);margin-bottom:12px;">Try these greener alternatives this week</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;">
+    {% for swap in swaps %}
+    {% set sname   = swap.get('name', '') or '' %}
+    {% set sslot   = swap.get('slot', '') or '' %}
+    {% set scal    = swap.get('calories') or swap.get('cal', 0) or 0 %}
+    {% set scarbon = swap.get('carbon', 0) or 0 %}
+    <div style="background:var(--green-lt);border-radius:10px;padding:14px;text-align:center;">
+      <div style="font-weight:700;color:var(--green);margin-bottom:4px;">{{ sname }}</div>
+      <div style="font-size:.85rem;color:var(--text2);">{{ sslot.title() }}</div>
+      <div style="font-size:.8rem;margin-top:6px;">
+        {{ scal }} kcal •
+        <span style="color:var(--green);font-weight:700;">{{ scarbon }} kg CO₂</span>
+      </div>
+      <span class="badge-green" style="font-size:.7rem;margin-top:6px;display:inline-block;">
+        🌱 Low Carbon
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="card" style="text-align:center;padding:48px;">
+  <div style="font-size:3rem;margin-bottom:12px;">🥗</div>
+  <h3 style="color:var(--green);">No Diet Plan Yet</h3>
+  <p style="color:var(--text2);">Complete your profile so the AI can generate your personalized plan.</p>
+  <div style="display:flex;gap:12px;justify-content:center;margin-top:16px;flex-wrap:wrap;">
+    <a href="{{ url_for('main.profile_setup') }}" class="btn-secondary">Set Up Profile</a>
+    <a href="{{ url_for('diet.regenerate') }}" class="btn-primary">🔄 Generate Now</a>
+  </div>
+</div>
+{% endif %}
+
+</div>{# end tab-plan #}
+
+
+<!-- TAB: CALORIE CALCULATOR -->
+<div id="tab-calc" style="display:none;">
+<div style="max-width:860px;">
+
+  <div style="margin-bottom:20px;">
+    <h2 style="font-size:1.4rem;font-weight:800;color:var(--green);margin:0 0 6px;">
+      🔢 Calorie Calculator
+    </h2>
+    <p style="color:var(--text2);margin:0;">
+      Type a food name — the <strong>Unit</strong> column updates automatically.
+      Ingredients (rice, chicken, dal…) use <strong>grams / ml</strong>.
+      Whole items (banana, egg, roti, idli…) use <strong>pieces / count</strong>.
+    </p>
+  </div>
+
+  <div class="card" style="margin-bottom:20px;">
+    <div style="display:grid;grid-template-columns:2fr 90px 80px 36px;
+                gap:9px;padding:7px 12px;border-radius:8px;
+                background:var(--green-lt);font-weight:700;
+                font-size:.82rem;color:var(--green);margin-bottom:12px;">
+      <span>Food Name</span>
+      <span>Quantity</span>
+      <span>Unit (auto)</span>
+      <span></span>
+    </div>
+    <div id="foodRows"></div>
+    <button onclick="addFoodRow()" class="btn-secondary"
+            style="padding:7px 18px;font-size:.85rem;margin-top:4px;">
+      + Add Food
+    </button>
+    <div style="margin-top:14px;padding:11px 14px;background:var(--blue-lt);
+                border-radius:9px;border-left:4px solid var(--blue);
+                font-size:.82rem;color:var(--blue);">
+      💡 <strong>Grams:</strong> rice 100g · chicken 150g · dal 80g · milk 200ml
+      &nbsp;|&nbsp;
+      <strong>Count:</strong> 2 bananas · 3 eggs · 2 rotis · 4 idlis
+    </div>
+    <div style="text-align:right;margin-top:16px;">
+      <button onclick="calcNow()" class="btn-primary" style="padding:10px 30px;font-size:1rem;">
+        🔍 Calculate Calories
+      </button>
+    </div>
+  </div>
+
+  <div id="calcOut" style="display:none;" class="card">
+    <h3 class="section-title">📊 Nutritional Breakdown</h3>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Food</th><th>Quantity</th><th>Calories</th>
+            <th>Protein</th><th>Carbs</th><th>Fat</th><th>CO₂ kg</th>
+          </tr>
+        </thead>
+        <tbody id="calcBody"></tbody>
+        <tfoot><tr id="calcTotal" style="background:var(--green-lt);font-weight:800;"></tr></tfoot>
+      </table>
+    </div>
+    <div id="macroBars" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px;"></div>
+  </div>
+
+  <div id="calcWarn" style="display:none;" class="alert-warning"></div>
+
+  <div class="card" style="margin-top:20px;">
+    <h3 class="section-title" style="margin-bottom:12px;">📋 Food Quick Reference</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div>
+        <div style="font-weight:700;color:var(--green);margin-bottom:8px;font-size:.88rem;">
+          ⚖️ Gram-based — enter weight (g or ml)
+        </div>
+        <div style="font-size:.81rem;color:var(--text2);line-height:2.1;">
+          Rice · Brown Rice · Dal · Lentils · Chickpeas · Rajma · Soya Chunks ·
+          Chicken · Fish · Mutton · Paneer · Tofu · Oats · Bread · Pasta ·
+          Wheat Flour · Potato · Sweet Potato · Spinach · Broccoli · Onion ·
+          Tomato · Carrot · Almonds · Peanuts · Milk (ml) · Curd ·
+          Cheese · Butter · Ghee · Sugar · Honey
+        </div>
+      </div>
+      <div>
+        <div style="font-weight:700;color:var(--blue);margin-bottom:8px;font-size:.88rem;">
+          🔢 Countable — enter number of pieces
+        </div>
+        <div style="font-size:.81rem;color:var(--text2);line-height:2.1;">
+          Banana · Apple · Orange · Mango · Guava · Pear · Watermelon Slice ·
+          Egg · Roti · Idli · Dosa · Vada · Samosa · Biscuit ·
+          Bread Slice · Glass of Milk · Cup of Tea · Cup of Coffee
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>{# end tab-calc #}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* ── Tabs ── */
+function switchTab(id, btn) {
+  document.getElementById('tab-plan').style.display = id === 'plan' ? 'block' : 'none';
+  document.getElementById('tab-calc').style.display = id === 'calc' ? 'block' : 'none';
+  document.getElementById('tabBtnPlan').classList.toggle('btn-primary',   id === 'plan');
+  document.getElementById('tabBtnPlan').classList.toggle('btn-secondary', id !== 'plan');
+  document.getElementById('tabBtnCalc').classList.toggle('btn-primary',   id === 'calc');
+  document.getElementById('tabBtnCalc').classList.toggle('btn-secondary', id !== 'calc');
+}
+/* Set initial active state */
+document.getElementById('tabBtnPlan').classList.add('btn-primary');
+document.getElementById('tabBtnPlan').classList.remove('btn-secondary');
+
+/* ── Day toggle ── */
+function toggleDay(i) {
+  var c = document.getElementById('dayContent' + i);
+  var a = document.getElementById('arrow' + i);
+  var open = c.style.display !== 'none';
+  c.style.display = open ? 'none' : 'grid';
+  a.textContent   = open ? '▶' : '▼';
+}
+
+/* ── Edit Modal ── */
+function openEditModal(dayIdx, slot, name, cal, carbon) {
+  document.getElementById('editDay').value    = dayIdx;
+  document.getElementById('editSlot').value   = slot;
+  document.getElementById('editName').value   = name;
+  document.getElementById('editCal').value    = cal;
+  document.getElementById('editCarbon').value = carbon;
+  document.getElementById('editModal').style.display = 'flex';
+}
+function closeEditModal(e) {
+  if (e && e.target !== document.getElementById('editModal')) return;
+  document.getElementById('editModal').style.display = 'none';
+}
+function saveMealEdit() {
+  var payload = {
+    day:       parseInt(document.getElementById('editDay').value),
+    slot:      document.getElementById('editSlot').value,
+    meal_name: document.getElementById('editName').value.trim(),
+    calories:  parseInt(document.getElementById('editCal').value)      || 0,
+    carbon:    parseFloat(document.getElementById('editCarbon').value)  || 0,
+  };
+  fetch('/diet/edit-meal', {
+    method:  'POST',
+    headers: {'Content-Type': 'application/json'},
+    body:    JSON.stringify(payload)
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.ok) { location.reload(); }
+    else { alert('Error: ' + d.msg); }
+  });
+}
+
+/* ══════════════════════════════════════
+   CALORIE CALCULATOR
+══════════════════════════════════════ */
+const GRAM_DB = {
+  'rice':          {cal:130,p:2.7,c:28,  f:0.3, u:'g',  co2:0.40},
+  'brown rice':    {cal:112,p:2.6,c:23,  f:0.9, u:'g',  co2:0.30},
+  'wheat flour':   {cal:340,p:13, c:72,  f:1.9, u:'g',  co2:0.30},
+  'oats':          {cal:389,p:17, c:66,  f:7,   u:'g',  co2:0.20},
+  'pasta':         {cal:131,p:5,  c:25,  f:1.1, u:'g',  co2:0.30},
+  'bread':         {cal:265,p:9,  c:49,  f:3.2, u:'g',  co2:0.30},
+  'chicken':       {cal:165,p:31, c:0,   f:3.6, u:'g',  co2:1.20},
+  'chicken breast':{cal:165,p:31, c:0,   f:3.6, u:'g',  co2:1.20},
+  'mutton':        {cal:294,p:25, c:0,   f:21,  u:'g',  co2:3.20},
+  'fish':          {cal:136,p:26, c:0,   f:3,   u:'g',  co2:0.80},
+  'paneer':        {cal:265,p:18, c:3,   f:20,  u:'g',  co2:0.70},
+  'tofu':          {cal:76, p:8,  c:2,   f:4.8, u:'g',  co2:0.20},
+  'dal':           {cal:116,p:9,  c:20,  f:0.4, u:'g',  co2:0.10},
+  'lentils':       {cal:116,p:9,  c:20,  f:0.4, u:'g',  co2:0.10},
+  'chickpeas':     {cal:164,p:9,  c:27,  f:2.6, u:'g',  co2:0.10},
+  'rajma':         {cal:127,p:9,  c:23,  f:0.5, u:'g',  co2:0.10},
+  'soya chunks':   {cal:345,p:52, c:33,  f:0.5, u:'g',  co2:0.20},
+  'milk':          {cal:61, p:3.2,c:4.8, f:3.3, u:'ml', co2:0.40},
+  'curd':          {cal:98, p:11, c:3.4, f:4.3, u:'g',  co2:0.50},
+  'yogurt':        {cal:98, p:11, c:3.4, f:4.3, u:'g',  co2:0.50},
+  'cheese':        {cal:402,p:25, c:1.3, f:33,  u:'g',  co2:1.00},
+  'butter':        {cal:717,p:0.9,c:0.1, f:81,  u:'g',  co2:0.90},
+  'ghee':          {cal:900,p:0,  c:0,   f:100, u:'g',  co2:1.00},
+  'spinach':       {cal:23, p:2.9,c:3.6, f:0.4, u:'g',  co2:0.10},
+  'broccoli':      {cal:34, p:2.8,c:7,   f:0.4, u:'g',  co2:0.10},
+  'potato':        {cal:77, p:2,  c:17,  f:0.1, u:'g',  co2:0.10},
+  'sweet potato':  {cal:86, p:1.6,c:20,  f:0.1, u:'g',  co2:0.10},
+  'onion':         {cal:40, p:1.1,c:9,   f:0.1, u:'g',  co2:0.10},
+  'tomato':        {cal:18, p:0.9,c:3.9, f:0.2, u:'g',  co2:0.10},
+  'carrot':        {cal:41, p:0.9,c:10,  f:0.2, u:'g',  co2:0.10},
+  'almonds':       {cal:579,p:21, c:22,  f:50,  u:'g',  co2:0.30},
+  'peanuts':       {cal:567,p:26, c:16,  f:49,  u:'g',  co2:0.20},
+  'sugar':         {cal:387,p:0,  c:100, f:0,   u:'g',  co2:0.30},
+  'honey':         {cal:304,p:0.3,c:82,  f:0,   u:'g',  co2:0.20},
+  'olive oil':     {cal:884,p:0,  c:0,   f:100, u:'ml', co2:0.50},
+};
+const COUNT_DB = {
+  'banana':           {cal:89,  p:1.1,c:23,  f:0.3, u:'piece',co2:0.10},
+  'apple':            {cal:95,  p:0.5,c:25,  f:0.3, u:'piece',co2:0.10},
+  'orange':           {cal:62,  p:1.2,c:15,  f:0.2, u:'piece',co2:0.10},
+  'mango':            {cal:99,  p:1.4,c:25,  f:0.6, u:'piece',co2:0.20},
+  'guava':            {cal:68,  p:2.6,c:14,  f:1.0, u:'piece',co2:0.10},
+  'pear':             {cal:57,  p:0.4,c:15,  f:0.1, u:'piece',co2:0.10},
+  'watermelon slice': {cal:85,  p:1.7,c:21,  f:0.4, u:'slice', co2:0.10},
+  'egg':              {cal:78,  p:6,  c:0.6, f:5.3, u:'piece',co2:0.10},
+  'roti':             {cal:104, p:3,  c:18,  f:3,   u:'piece',co2:0.10},
+  'idli':             {cal:58,  p:2,  c:12,  f:0.4, u:'piece',co2:0.10},
+  'dosa':             {cal:133, p:3.4,c:20,  f:4.5, u:'piece',co2:0.20},
+  'vada':             {cal:97,  p:3,  c:14,  f:3.5, u:'piece',co2:0.20},
+  'samosa':           {cal:262, p:3.5,c:28,  f:16,  u:'piece',co2:0.30},
+  'biscuit':          {cal:47,  p:0.7,c:7,   f:1.8, u:'piece',co2:0.10},
+  'bread slice':      {cal:79,  p:2.7,c:15,  f:1,   u:'slice', co2:0.10},
+  'glass of milk':    {cal:122, p:6.4,c:9.6, f:6.6, u:'glass', co2:0.20},
+  'cup of tea':       {cal:30,  p:1,  c:3,   f:1.5, u:'cup',   co2:0.10},
+  'cup of coffee':    {cal:5,   p:0.3,c:1,   f:0,   u:'cup',   co2:0.10},
+};
+const ALL_FOOD_NAMES = [...Object.keys(GRAM_DB), ...Object.keys(COUNT_DB)].sort();
+
+function lookupFood(raw) {
+  const q = raw.toLowerCase().trim();
+  if (GRAM_DB[q])  return { ...GRAM_DB[q],  name: q, mode: 'gram'  };
+  if (COUNT_DB[q]) return { ...COUNT_DB[q], name: q, mode: 'count' };
+  const gk = Object.keys(GRAM_DB).find(k => q.includes(k) || k.includes(q));
+  if (gk) return { ...GRAM_DB[gk],  name: gk, mode: 'gram'  };
+  const ck = Object.keys(COUNT_DB).find(k => q.includes(k) || k.includes(q));
+  if (ck) return { ...COUNT_DB[ck], name: ck, mode: 'count' };
+  return null;
+}
+
+let rowCount = 0;
+function addFoodRow(defName='', defQty='') {
+  rowCount++;
+  const id  = 'fr' + rowCount;
+  const div = document.createElement('div');
+  div.className = 'food-row';
+  div.id = id;
+  div.style.cssText = 'display:grid;grid-template-columns:2fr 90px 80px 36px;gap:9px;align-items:center;margin-bottom:8px;';
+  div.innerHTML = `
+    <div style="position:relative;">
+      <input type="text" autocomplete="off"
+             style="width:100%;padding:9px 12px;border:1.5px solid var(--border);
+                    border-radius:8px;background:var(--surface);color:var(--text);font-size:.88rem;"
+             placeholder="e.g. rice, banana, egg…"
+             value="${defName}"
+             oninput="onFoodInput(this)"
+             onchange="onFoodChange(this)">
+      <div class="sug-box" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:300;
+           background:var(--surface);border:1.5px solid var(--border);border-radius:9px;
+           max-height:190px;overflow-y:auto;box-shadow:0 6px 20px rgba(0,0,0,.15);"></div>
+    </div>
+    <input type="number" min="0.1" step="any"
+           style="padding:9px 8px;border:1.5px solid var(--border);border-radius:8px;
+                  background:var(--surface);color:var(--text);font-size:.88rem;width:100%;"
+           placeholder="qty" value="${defQty}">
+    <div style="padding:9px 8px;background:var(--surface2);border:1.5px solid var(--border);
+                border-radius:8px;font-size:.8rem;text-align:center;font-weight:700;
+                color:var(--text3);">—</div>
+    <button type="button" onclick="removeFoodRow('${id}')"
+            style="background:var(--red-lt);color:var(--red);border:none;border-radius:8px;
+                   width:36px;height:36px;cursor:pointer;font-size:1.1rem;font-weight:700;">×</button>`;
+  document.getElementById('foodRows').appendChild(div);
+  if (defName) onFoodChange(div.querySelector('input[type=text]'));
+}
+
+function removeFoodRow(id) {
+  if (document.querySelectorAll('[id^="fr"]').length > 1)
+    document.getElementById(id).remove();
+}
+
+function onFoodInput(input) {
+  const q   = input.value.toLowerCase();
+  const sug = input.nextElementSibling;
+  if (q.length < 1) { sug.style.display = 'none'; return; }
+  const hits = ALL_FOOD_NAMES.filter(f => f.includes(q)).slice(0, 9);
+  if (!hits.length) { sug.style.display = 'none'; return; }
+  sug.innerHTML = hits.map(f =>
+    `<div onclick="pickSug(this,'${f.replace(/'/g,"\\'")}' )"
+          style="padding:8px 14px;font-size:.87rem;color:var(--text);cursor:pointer;"
+          onmouseover="this.style.background='var(--green-lt)'"
+          onmouseout="this.style.background=''">
+       ${f}
+     </div>`).join('');
+  sug.style.display = 'block';
+}
+function pickSug(el, food) {
+  const row = el.closest('[id^="fr"]');
+  row.querySelector('input[type=text]').value = food;
+  el.closest('.sug-box').style.display = 'none';
+  onFoodChange(row.querySelector('input[type=text]'));
+}
+document.addEventListener('click', e => {
+  document.querySelectorAll('.sug-box').forEach(s => {
+    if (!s.parentElement.contains(e.target)) s.style.display = 'none';
+  });
+});
+
+function onFoodChange(input) {
+  const info = lookupFood(input.value);
+  const row  = input.closest('[id^="fr"]');
+  const tag  = row.querySelector('div[style*="text-align:center"]');
+  const qty  = row.querySelector('input[type=number]');
+  if (!info) { tag.textContent = '—'; tag.style.color = 'var(--text3)'; return; }
+  if (info.mode === 'gram') {
+    tag.textContent = info.u === 'ml' ? 'ml' : 'grams';
+    tag.style.color = 'var(--blue)';
+    if (!qty.value || parseFloat(qty.value) === 1) qty.value = 100;
+  } else {
+    tag.textContent = info.u + '(s)';
+    tag.style.color = 'var(--green)';
+    if (!qty.value || parseFloat(qty.value) === 100) qty.value = 1;
+  }
+}
+
+function r1(n) { return Math.round(n * 10) / 10; }
+function r3(n) { return Math.round(n * 1000) / 1000; }
+
+function calcNow() {
+  const rows    = document.querySelectorAll('[id^="fr"]');
+  const results = [], notFound = [];
+  const tot     = { cal:0, p:0, c:0, f:0, co2:0 };
+
+  rows.forEach(row => {
+    const name = row.querySelector('input[type=text]').value.trim();
+    const qty  = parseFloat(row.querySelector('input[type=number]').value) || 1;
+    if (!name) return;
+    const info = lookupFood(name);
+    if (!info) { notFound.push(name); return; }
+    const fac = info.mode === 'gram' ? qty / 100 : qty;
+    const res = {
+      name: info.name, qty, unit: info.u, mode: info.mode,
+      cal: r1(info.cal*fac), p: r1(info.p*fac),
+      c:   r1(info.c*fac),   f: r1(info.f*fac), co2: r3(info.co2*fac),
+    };
+    results.push(res);
+    tot.cal+=res.cal; tot.p+=res.p; tot.c+=res.c; tot.f+=res.f; tot.co2+=res.co2;
+  });
+
+  if (!results.length && !notFound.length) { alert('Please add at least one food item.'); return; }
+
+  document.getElementById('calcBody').innerHTML = results.map(r => {
+    const cb = r.co2 < 0.5 ? 'badge-green' : r.co2 < 1.5 ? 'badge-yellow' : 'badge-red';
+    const ql = r.mode === 'gram' ? `${r.qty} ${r.unit}` : `${r.qty} ${r.unit}${r.qty>1?'s':''}`;
+    const nm = r.name.charAt(0).toUpperCase() + r.name.slice(1);
+    return `<tr>
+      <td><strong>${nm}</strong></td><td>${ql}</td>
+      <td><strong>${r.cal} kcal</strong></td>
+      <td>${r.p}g</td><td>${r.c}g</td><td>${r.f}g</td>
+      <td><span class="${cb}" style="font-size:.74rem;">${r.co2}</span></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('calcTotal').innerHTML =
+    `<td colspan="2">🔢 TOTAL</td>
+     <td>${r1(tot.cal)} kcal</td>
+     <td>${r1(tot.p)}g</td><td>${r1(tot.c)}g</td><td>${r1(tot.f)}g</td>
+     <td>${r3(tot.co2)}</td>`;
+
+  const tm = (tot.p + tot.c + tot.f) || 1;
+  document.getElementById('macroBars').innerHTML =
+    [['Protein',tot.p,'#1B6B2F'],['Carbs',tot.c,'#1565C0'],['Fat',tot.f,'#FF8F00']]
+    .map(([label,val,col]) => {
+      const pct = Math.round(val/tm*100);
+      return `<div style="text-align:center;padding:14px;background:var(--surface2);border-radius:10px;">
+        <div style="font-size:1.5rem;font-weight:800;color:${col};margin-bottom:4px;">${r1(val)}g</div>
+        <div style="font-size:.82rem;color:var(--text2);">${label}</div>
+        <div style="height:5px;background:var(--border);border-radius:3px;margin:6px 0;">
+          <div style="height:5px;background:${col};border-radius:3px;width:${pct}%;"></div>
+        </div>
+        <div style="font-size:.74rem;color:var(--text3);">${pct}% of macros</div>
+      </div>`;
+    }).join('');
+
+  document.getElementById('calcOut').style.display = 'block';
+
+  const w = document.getElementById('calcWarn');
+  if (notFound.length) {
+    w.style.display = 'block';
+    w.innerHTML = `⚠️ Not found: <strong>${notFound.join(', ')}</strong>. Try simpler names like "chicken", "rice".`;
+  } else { w.style.display = 'none'; }
+}
+
+addFoodRow(); addFoodRow(); addFoodRow();
+</script>
+{% endblock %}

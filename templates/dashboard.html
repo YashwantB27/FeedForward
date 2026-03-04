@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+  <div>
+    <h1 style="font-size:1.8rem;font-weight:800;color:var(--green);" id="greeting">
+      Hello, {{ current_user.name.split()[0] }}! 👋
+    </h1>
+    <p style="color:var(--text2);">{{ t.dash_subtitle }}</p>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <a href="{{ url_for('diet.regenerate') }}"     class="btn-secondary" style="font-size:.88rem;padding:8px 16px;">{{ t.dash_new_diet }}</a>
+    <a href="{{ url_for('exercise.regenerate') }}" class="btn-secondary" style="font-size:.88rem;padding:8px 16px;">{{ t.dash_new_ex }}</a>
+  </div>
+</div>
+
+{% if not current_user.profile_complete %}
+<div class="alert-warning">
+  ⚠️ Your profile is incomplete!
+  <a href="{{ url_for('main.setup_profile') }}" style="color:#C65100;font-weight:700;">Complete it now →</a>
+</div>
+{% endif %}
+
+<!-- VIDEO MODAL -->
+<div id="vidModal" onclick="if(event.target===this)stopVid()"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);
+            z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#000;border-radius:14px;overflow:hidden;
+              width:min(800px,96vw);position:relative;aspect-ratio:16/9;">
+    <button onclick="stopVid()"
+            style="position:absolute;top:10px;right:12px;z-index:10;
+                   background:rgba(0,0,0,.7);color:#fff;border:none;
+                   border-radius:50%;width:36px;height:36px;font-size:1.2rem;
+                   cursor:pointer;line-height:1;">×</button>
+    <iframe id="vidFrame" src="" width="100%" height="100%" frameborder="0"
+            allow="autoplay;encrypted-media" allowfullscreen
+            style="display:block;"></iframe>
+  </div>
+</div>
+
+<!-- STAT CARDS -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
+
+  <div class="card" style="text-align:center;border-top:4px solid var(--green);">
+    <div style="font-size:2rem;">🔥</div>
+    <div style="font-size:1.9rem;font-weight:800;color:var(--green);">{{ streak }}</div>
+    <div style="color:var(--text2);font-size:.82rem;font-weight:600;">{{ t.dash_streak }}</div>
+  </div>
+
+  <div class="card" style="text-align:center;border-top:4px solid var(--blue);">
+    <div style="font-size:2rem;">⚖️</div>
+    <div style="font-size:1.9rem;font-weight:800;color:var(--blue);">{{ current_user.weight or '--' }}</div>
+    <div style="color:var(--text2);font-size:.82rem;font-weight:600;">{{ t.dash_weight }}</div>
+  </div>
+
+  <div class="card" style="text-align:center;border-top:4px solid #E65100;">
+    <div style="font-size:2rem;">🥗</div>
+    <div style="font-size:1.9rem;font-weight:800;color:#E65100;">{{ today_meal.total_calories if today_meal else '--' }}</div>
+    <div style="color:var(--text2);font-size:.82rem;font-weight:600;">Daily Calories Consumed</div>
+  </div>
+
+  <div class="card" style="text-align:center;border-top:4px solid #6A1B9A;">
+    <div style="font-size:2rem;">🌍</div>
+    <div style="font-size:1.9rem;font-weight:800;color:#6A1B9A;">{{ today_meal.total_carbon if today_meal else '--' }}</div>
+    <div style="color:var(--text2);font-size:.82rem;font-weight:600;">{{ t.dash_carbon }}</div>
+  </div>
+
+</div>
+
+<!-- TODAY MEALS + WORKOUT -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+
+  <!-- Meals -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h3 class="section-title" style="margin:0;">🥗 {{ t.dash_meals }}</h3>
+      <a href="{{ url_for('diet.index') }}" style="color:var(--green);font-size:.83rem;font-weight:600;">{{ t.dash_view_plan }}</a>
+    </div>
+    {% if today_meal %}
+      {% for slot,emoji in [('breakfast','🌅'),('lunch','☀️'),('dinner','🌙'),('snack','🍎')] %}
+      <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);">
+        <span style="font-size:1.2rem;width:28px;">{{ emoji }}</span>
+        <div style="flex:1;">
+          <div style="font-weight:600;font-size:.88rem;">{{ today_meal[slot].name }}</div>
+          <div style="color:var(--text2);font-size:.78rem;">{{ today_meal[slot].cal }} kcal</div>
+        </div>
+        <span class="badge-{{ 'green' if today_meal[slot].carbon < 0.5 else ('yellow' if today_meal[slot].carbon < 1.5 else 'red') }}">
+          {{ today_meal[slot].carbon }}
+        </span>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="text-align:center;padding:32px;color:var(--text2);">
+        <div style="font-size:2rem;">🥗</div>
+        <p>{{ t.dash_no_plan }}</p>
+        <a href="{{ url_for('main.setup_profile') }}" class="btn-primary" style="margin-top:10px;font-size:.88rem;">Setup Profile</a>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Workout -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h3 class="section-title" style="margin:0;">💪 {{ t.dash_workout }}</h3>
+      <a href="{{ url_for('exercise.index') }}" style="color:var(--green);font-size:.83rem;font-weight:600;">{{ t.dash_view_plan }}</a>
+    </div>
+    {% if today_ex %}
+      <div style="background:var(--green-lt);border-radius:8px;padding:10px;margin-bottom:10px;">
+        <div style="font-weight:700;color:var(--green);">{{ today_ex.focus }}</div>
+        <div style="color:var(--text2);font-size:.83rem;">{{ today_ex.duration }} • {{ today_ex.total_calories }} cal</div>
+      </div>
+      {% if today_ex.type == 'rest' %}
+        <div style="text-align:center;padding:20px;color:var(--text2);">😴 {{ t.dash_rest }}</div>
+      {% else %}
+        {% for ex in today_ex.exercises %}
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+          <span>🏋️</span>
+          <div style="flex:1;">
+            <div style="font-weight:600;font-size:.88rem;">{{ ex.name }}</div>
+            <div style="color:var(--text2);font-size:.78rem;">{{ ex.sets }} sets × {{ ex.reps }}</div>
+          </div>
+          {% set vid_id = ex.video.split('watch?v=')[-1] if ex.video and 'watch?v=' in ex.video else (ex.video_id if ex.video_id else '') %}
+          {% if vid_id %}
+          <button onclick="playVid('{{ vid_id }}')"
+                  style="background:#FFEBEE;color:#C62828;border:none;border-radius:6px;
+                         padding:4px 10px;font-size:.74rem;font-weight:700;cursor:pointer;">
+            ▶ Video
+          </button>
+          {% endif %}
+        </div>
+        {% endfor %}
+      {% endif %}
+    {% else %}
+      <div style="text-align:center;padding:32px;color:var(--text2);">
+        <div style="font-size:2rem;">💪</div>
+        <p>{{ t.dash_no_plan }}</p>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- FOOD BANK + PROGRESS LOG -->
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;">
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h3 class="section-title" style="margin:0;">🤝 {{ t.dash_nearby }}</h3>
+      <a href="{{ url_for('foodbank.index') }}" style="color:var(--green);font-size:.83rem;font-weight:600;">View Map →</a>
+    </div>
+    {% if nearby_food %}
+      {% for food in nearby_food %}
+      <div style="display:flex;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid var(--border);">
+        <div style="width:44px;height:44px;background:var(--green-lt);border-radius:10px;
+                    display:flex;align-items:center;justify-content:center;font-size:1.4rem;">🍱</div>
+        <div style="flex:1;">
+          <div style="font-weight:700;font-size:.9rem;">{{ food.food_name }}</div>
+          <div style="color:var(--text2);font-size:.8rem;">{{ food.quantity }} • {{ food.location }}</div>
+        </div>
+        <span class="badge-green">Available</span>
+        <a href="{{ url_for('foodbank.claim', listing_id=food.id) }}" class="btn-primary"
+           style="font-size:.78rem;padding:6px 12px;">Claim</a>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="text-align:center;padding:32px;color:var(--text2);">
+        <div style="font-size:2rem;">🤝</div>
+        <p>No food listings yet.</p>
+        <a href="{{ url_for('foodbank.donate') }}" class="btn-primary" style="margin-top:10px;font-size:.88rem;">Donate Food!</a>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h3 class="section-title">📊 {{ t.dash_log }}</h3>
+    <form method="POST" action="{{ url_for('progress.index') }}">
+      <div class="form-group">
+        <label>Weight (kg)</label>
+        <input type="number" name="weight" step="0.1"
+               value="{{ today_log.weight if today_log else current_user.weight or '' }}" placeholder="70.0"/>
+      </div>
+      <div class="form-group">
+        <label>Water (L)</label>
+        <input type="number" name="water" step="0.1"
+               value="{{ today_log.water_intake if today_log else '' }}" placeholder="2.5"/>
+      </div>
+      <div class="form-group">
+        <label>Calories Consumed</label>
+        <input type="number" name="calories_consumed"
+               value="{{ today_log.calories_consumed if today_log else '' }}" placeholder="1800"/>
+      </div>
+      <div class="form-group">
+        <label>Calories Burned</label>
+        <input type="number" name="calories_burned"
+               value="{{ today_log.calories_burned if today_log else '' }}" placeholder="300"/>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+        <input type="checkbox" name="workout_done" id="wd" style="width:auto;"
+               {% if today_log and today_log.workout_done %}checked{% endif %}/>
+        <label for="wd" style="margin:0;font-size:.88rem;">Workout Done</label>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;text-align:center;">💾 Save Log</button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var hour = new Date().getHours();
+var name = "{{ current_user.name.split()[0] }}";
+var greeting = hour < 12 ? "Good Morning" : hour < 17 ? "Good Afternoon" : "Good Evening";
+document.getElementById('greeting').innerHTML = greeting + ', ' + name + '! 👋';
+
+function playVid(id) {
+  document.getElementById('vidFrame').src =
+    'https://www.youtube.com/embed/' + id + '?autoplay=1';
+  document.getElementById('vidModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function stopVid() {
+  document.getElementById('vidFrame').src = '';
+  document.getElementById('vidModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') stopVid();
+});
+</script>
+{% endblock %}

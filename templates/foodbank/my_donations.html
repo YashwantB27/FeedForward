@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}My Donations{% endblock %}
+{% block content %}
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+  <h1 style="font-size:2rem;font-weight:800;color:#1B6B2F;">🎁 My Donations</h1>
+  <a href="{{ url_for('foodbank.donate') }}" class="btn-primary">+ New Donation</a>
+</div>
+
+{% set total_posted  = donations | length %}
+{% set total_claimed = donations | selectattr('status','equalto','claimed') | list | length %}
+{% set kg_saved      = total_claimed * 2 %}
+{% set meals         = total_claimed %}
+
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;margin-bottom:24px;">
+  {% for icon,val,label,color in [
+    ('📦', total_posted,  'Total Posted',    '#1B6B2F'),
+    ('✅', total_claimed, 'Claimed',         '#1565C0'),
+    ('🥗', kg_saved,      'KG Saved',        '#E65100'),
+    ('🍽️', meals,         'Meals Provided',  '#4A148C'),
+  ] %}
+  <div class="card" style="text-align:center;border-top:4px solid {{ color }};">
+    <div style="font-size:1.5rem;">{{ icon }}</div>
+    <div style="font-size:2rem;font-weight:800;color:{{ color }};">{{ val }}</div>
+    <div style="color:var(--text2);font-size:.85rem;">{{ label }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+{% for d in donations %}
+<div class="card" style="margin-bottom:12px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+  <div style="font-size:2rem;">🍱</div>
+  <div style="flex:1;">
+    <div style="font-weight:700;">{{ d.food_name }}</div>
+    <div style="color:var(--text2);font-size:.85rem;">
+      {{ d.quantity }} • {{ d.location }} • Posted {{ d.posted_at.strftime('%d %b %Y') }}
+    </div>
+  </div>
+  <span class="badge-{{ 'green' if d.status=='available' else 'yellow' if d.status=='claimed' else 'red' }}">
+    {{ d.status.title() }}
+  </span>
+  <a href="{{ url_for('foodbank.delete_listing', listing_id=d.id) }}"
+     onclick="return confirm('Delete this listing?')"
+     style="color:#C62828;font-size:.85rem;">🗑 Delete</a>
+</div>
+{% else %}
+<div style="text-align:center;padding:60px;background:var(--surface);border-radius:16px;">
+  <div style="font-size:3rem;">🎁</div>
+  <h2 style="color:#1B6B2F;">No donations yet</h2>
+  <a href="{{ url_for('foodbank.donate') }}" class="btn-primary" style="margin-top:16px;">
+    Donate Food Now
+  </a>
+</div>
+{% endfor %}
+
+{% endblock %}

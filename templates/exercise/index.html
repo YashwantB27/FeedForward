@@ -1,0 +1,507 @@
+{% extends 'base.html' %}
+{% block title %}Exercise Planner{% endblock %}
+
+{% block head %}
+<style>
+/* ── Tabs ─────────────────────────────────────────── */
+.tab-bar   { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:28px; }
+.tab-btn   { padding:10px 24px; border:2px solid var(--border); border-radius:10px;
+             background:var(--surface); color:var(--text); font-weight:700;
+             font-size:.92rem; cursor:pointer; transition:all .18s; }
+.tab-btn.active { background:var(--green); color:#fff; border-color:var(--green); }
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
+
+/* ── Day cards ────────────────────────────────────── */
+.day-grid  { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr));
+             gap:18px; }
+.ex-row    { background:var(--surface2); border-radius:10px; padding:13px 14px;
+             margin-bottom:9px; border:1.5px solid var(--border);
+             transition:border-color .15s; }
+.ex-row:hover { border-color:var(--green); }
+.ex-top    { display:flex; justify-content:space-between; align-items:flex-start;
+             gap:8px; margin-bottom:8px; }
+.ex-name   { font-weight:700; font-size:.93rem; color:var(--text); }
+.ex-btns   { display:flex; gap:5px; flex-shrink:0; }
+
+/* ── Buttons ──────────────────────────────────────── */
+.btn-watch { background:#FFEBEE; color:#C62828; border:none; border-radius:6px;
+             padding:4px 10px; font-size:.74rem; font-weight:700; cursor:pointer; }
+.btn-watch:hover { background:#FFCDD2; }
+.btn-edit  { background:var(--toggle-bg); border:1px solid var(--border);
+             color:var(--text2); border-radius:6px; padding:4px 10px;
+             font-size:.74rem; cursor:pointer; transition:all .15s; }
+.btn-edit:hover  { background:var(--green-lt); color:var(--green); border-color:var(--green); }
+
+/* ── Library list ─────────────────────────────────── */
+.lib-item  { padding:11px 14px; background:var(--surface2); border-radius:9px;
+             display:flex; justify-content:space-between; align-items:center;
+             cursor:pointer; border:1.5px solid transparent; transition:all .15s; }
+.lib-item:hover { border-color:var(--green); background:var(--green-lt); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ═══════════════ VIDEO MODAL ═══════════════ #}
+<div id="vidModal" onclick="if(event.target===this)stopVid()"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);
+            z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#000;border-radius:14px;overflow:hidden;
+              width:min(800px,96vw);position:relative;aspect-ratio:16/9;">
+    <button onclick="stopVid()"
+            style="position:absolute;top:10px;right:12px;z-index:10;
+                   background:rgba(0,0,0,.7);color:#fff;border:none;
+                   border-radius:50%;width:36px;height:36px;font-size:1.2rem;
+                   cursor:pointer;line-height:1;">×</button>
+    <iframe id="vidFrame" src="" width="100%" height="100%" frameborder="0"
+            allow="autoplay;encrypted-media" allowfullscreen
+            style="display:block;"></iframe>
+  </div>
+</div>
+
+{# ═══════════════ EDIT MODAL ════════════════ #}
+<div id="editModal" onclick="if(event.target===this)closeEdit()"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
+            z-index:9998;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border-radius:16px;padding:28px;
+              width:min(460px,95vw);box-shadow:0 14px 40px rgba(0,0,0,.3);">
+    <h3 style="color:var(--green);margin:0 0 20px;">✏️ Edit Exercise</h3>
+    <input type="hidden" id="eDayIdx">
+    <input type="hidden" id="eExIdx">
+    <div class="form-group">
+      <label>Exercise Name</label>
+      <input type="text" id="eName" placeholder="e.g. Squats, Push-Ups">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group">
+        <label>Sets</label>
+        <input type="number" id="eSets" min="1" max="20" placeholder="3">
+      </div>
+      <div class="form-group">
+        <label>Reps / Duration</label>
+        <input type="text" id="eReps" placeholder="15 or 30 sec">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group">
+        <label>Calories Burned</label>
+        <input type="number" id="eCal" placeholder="80">
+      </div>
+      <div class="form-group">
+        <label>Muscle Group</label>
+        <input type="text" id="eMuscle" placeholder="Chest, Legs…">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+      <button onclick="closeEdit()" class="btn-secondary">Cancel</button>
+      <button onclick="saveEdit()"  class="btn-primary">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
+{# ═══════════════ PAGE HEADER ════════════════ #}
+<div style="display:flex;justify-content:space-between;align-items:center;
+            flex-wrap:wrap;gap:12px;margin-bottom:24px;">
+  <div>
+    <h1 style="font-size:2rem;font-weight:800;color:var(--green);margin:0;">
+      💪 Exercise Planner
+    </h1>
+    <p style="color:var(--text2);margin:4px 0 0;">
+      AI workout plan · custom routine builder
+    </p>
+  </div>
+  <a href="{{ url_for('exercise.regenerate') }}" class="btn-primary">🔄 Regenerate Plan</a>
+</div>
+
+{# ── Stats strip ─────────────────────────────────────── #}
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));
+            gap:14px;margin-bottom:28px;">
+  {% if bmi_data %}
+  <div class="card" style="text-align:center;padding:18px;">
+    <div style="font-size:1.9rem;font-weight:800;color:var(--green);">{{ bmi_data.bmi }}</div>
+    <div style="font-weight:700;font-size:.88rem;margin-bottom:4px;">📊 BMI</div>
+    <span class="badge-{% if bmi_data.category=='Normal Weight' %}green
+                        {% elif bmi_data.category=='Underweight' %}blue
+                        {% else %}red{% endif %}" style="font-size:.74rem;">
+      {{ bmi_data.category }}
+    </span>
+    <div style="font-size:.76rem;color:var(--text2);margin-top:6px;">{{ bmi_data.advice }}</div>
+  </div>
+  {% endif %}
+
+  <div class="card" style="text-align:center;padding:18px;">
+    <div style="font-size:1.9rem;font-weight:800;color:var(--blue);">{{ water }}L</div>
+    <div style="font-weight:700;font-size:.88rem;margin-bottom:4px;">💧 Daily Water</div>
+    <div style="font-size:.76rem;color:var(--text2);">Based on your weight</div>
+  </div>
+
+  <div class="card" style="text-align:center;padding:18px;">
+    <div style="font-size:1.5rem;margin-bottom:6px;">🎯</div>
+    <div style="font-weight:700;font-size:.88rem;margin-bottom:4px;">Goal</div>
+    <span class="badge-green" style="font-size:.74rem;">
+      {{ (current_user.health_goal or 'Not set').replace('_',' ').title() }}
+    </span>
+  </div>
+
+  <div class="card" style="text-align:center;padding:18px;">
+    <div style="font-size:1.5rem;margin-bottom:6px;">🏋️</div>
+    <div style="font-weight:700;font-size:.88rem;margin-bottom:4px;">Fitness Level</div>
+    <span class="badge-blue" style="font-size:.74rem;">
+      {{ (current_user.fitness_level or 'Beginner').title() }}
+    </span>
+  </div>
+</div>
+
+{# ── Tab bar ─────────────────────────────────────────── #}
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('plan',   this)">📅 AI Workout Plan</button>
+  <button class="tab-btn"        onclick="switchTab('custom', this)">🛠️ Build My Routine</button>
+</div>
+
+
+{# ════════════════════════════════════════════════
+   TAB 1 — AI WORKOUT PLAN
+════════════════════════════════════════════════ #}
+<div id="tab-plan" class="tab-panel active">
+{% if plan_data %}
+{% set days = plan_data.get('plan', []) %}
+
+<div class="day-grid">
+{% for day in days %}
+<div class="card" style="border-top:4px solid
+     {% if day.type == 'rest' %}var(--border){% else %}var(--green){% endif %};">
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <div style="font-weight:800;color:var(--green);font-size:1.05rem;">{{ day.day }}</div>
+    {% if day.type == 'rest' %}
+      <span class="badge-yellow">😴 Rest</span>
+    {% else %}
+      <span class="badge-green">{{ day.focus }}</span>
+    {% endif %}
+  </div>
+
+  {% if day.type == 'rest' %}
+  <div style="text-align:center;padding:18px 0;color:var(--text2);font-size:.9rem;">
+    🛌 Active recovery — light stretching recommended
+  </div>
+
+  {% else %}
+  {% set day_idx = loop.index0 %}
+  {% for ex in day.get('exercises', []) %}
+  {% set ex_idx = loop.index0 %}
+
+  {# ── Resolve video ID from either video_id field or full video URL ── #}
+  {% if ex.video_id %}
+    {% set vid = ex.video_id %}
+  {% elif ex.video and 'watch?v=' in ex.video %}
+    {% set vid = ex.video.split('watch?v=')[-1] %}
+  {% elif ex.video and 'youtu.be/' in ex.video %}
+    {% set vid = ex.video.split('youtu.be/')[-1] %}
+  {% else %}
+    {% set vid = '' %}
+  {% endif %}
+
+  <div class="ex-row">
+    <div class="ex-top">
+      <span class="ex-name">{{ ex.name }}</span>
+      <div class="ex-btns">
+        {% if vid %}
+        <button class="btn-watch" onclick="playVid('{{ vid }}')">▶ Watch</button>
+        {% endif %}
+        <button class="btn-edit"
+          onclick="openEdit(
+            {{ day_idx }}, {{ ex_idx }},
+            '{{ ex.name | replace("'","&#39;") }}',
+            {{ ex.sets }},
+            '{{ ex.reps }}',
+            {{ ex.cal }},
+            '{{ ex.get("muscle","") }}'
+          )">✏️ Edit</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <span class="badge-green"  style="font-size:.74rem;">{{ ex.sets }} × {{ ex.reps }}</span>
+      <span class="badge-blue"   style="font-size:.74rem;">{{ ex.get('muscle','') }}</span>
+      <span class="badge-yellow" style="font-size:.74rem;">🔥 {{ ex.cal }} kcal</span>
+    </div>
+  </div>
+  {% endfor %}
+
+  <div style="padding-top:10px;border-top:1px solid var(--border);
+              font-size:.82rem;color:var(--text2);display:flex;gap:16px;">
+    <span>🔥 <strong>{{ day.total_calories }}</strong> kcal burned</span>
+    <span>⏱ {{ day.duration }}</span>
+  </div>
+  {% endif %}
+
+</div>
+{% endfor %}
+</div>
+
+{% else %}
+<div class="card" style="text-align:center;padding:52px 24px;">
+  <div style="font-size:3.5rem;margin-bottom:12px;">💪</div>
+  <h3 style="color:var(--green);margin-bottom:8px;">No Exercise Plan Yet</h3>
+  <p style="color:var(--text2);margin-bottom:20px;">
+    Complete your profile so the AI can generate your personalised plan.
+  </p>
+  <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+    <a href="{{ url_for('main.profile_setup') }}" class="btn-secondary">Set Up Profile</a>
+    <a href="{{ url_for('exercise.regenerate') }}" class="btn-primary">🔄 Generate Now</a>
+  </div>
+</div>
+{% endif %}
+</div>{# end tab-plan #}
+
+
+{# ════════════════════════════════════════════════
+   TAB 2 — CUSTOM ROUTINE BUILDER
+════════════════════════════════════════════════ #}
+<div id="tab-custom" class="tab-panel">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+
+    <div>
+      <div style="font-weight:700;color:var(--green);margin-bottom:10px;">
+        📚 Exercise Library
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+        {% for cat in ['All','Cardio','Strength','Core','Flexibility'] %}
+        <button id="cat-{{ cat }}" onclick="filterLib('{{ cat }}')"
+                style="padding:4px 14px;border-radius:20px;font-size:.8rem;font-weight:600;
+                       cursor:pointer;border:1.5px solid var(--border);transition:all .15s;
+                       background:{% if cat=='All' %}var(--green){% else %}var(--surface){% endif %};
+                       color:{% if cat=='All' %}#fff{% else %}var(--text){% endif %};">
+          {{ cat }}
+        </button>
+        {% endfor %}
+      </div>
+      <div id="libList" style="max-height:440px;overflow-y:auto;
+           display:flex;flex-direction:column;gap:6px;">
+        {% for ex in exercise_library %}
+        <div class="lib-item" data-cat="{{ ex.category }}"
+             onclick="addToRoutine('{{ ex.name | replace("'","&#39;") }}',
+                       '{{ ex.category }}',{{ ex.sets }},
+                       '{{ ex.reps }}',{{ ex.cal }},'{{ ex.muscle }}')">
+          <div>
+            <div style="font-weight:600;font-size:.9rem;">{{ ex.name }}</div>
+            <div style="font-size:.76rem;color:var(--text2);">
+              {{ ex.sets }}×{{ ex.reps }} &bull; {{ ex.muscle }} &bull; 🔥{{ ex.cal }} kcal
+            </div>
+          </div>
+          <span class="badge-{% if ex.category=='Cardio' %}blue
+                              {% elif ex.category=='Core' %}yellow
+                              {% elif ex.category=='Flexibility' %}green
+                              {% else %}red{% endif %}"
+                style="font-size:.7rem;flex-shrink:0;">{{ ex.category }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <div style="font-weight:700;color:var(--green);margin-bottom:10px;">📋 My Routine</div>
+      <div class="form-group">
+        <label>Routine Name</label>
+        <input type="text" id="routineName" placeholder="e.g. Morning Strength Blast">
+      </div>
+      <div id="routineList"
+           style="min-height:130px;max-height:290px;overflow-y:auto;
+                  display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">
+        <div id="emptyMsg"
+             style="text-align:center;padding:30px 0;color:var(--text3);
+                    font-size:.87rem;border:2px dashed var(--border);border-radius:10px;">
+          ← Click any exercise to add it here
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div id="routineStats" style="font-size:.84rem;color:var(--text2);font-weight:600;"></div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="clearRoutine()" class="btn-secondary"
+                  style="padding:7px 14px;font-size:.85rem;">Clear</button>
+          <button onclick="saveRoutine()"  class="btn-primary"
+                  style="padding:7px 14px;font-size:.85rem;">💾 Save Routine</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if custom_workouts %}
+  <div style="margin-top:28px;">
+    <h3 class="section-title">⭐ My Saved Routines</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;">
+      {% for wo in custom_workouts %}
+      {% set exs = wo.exercises | fromjson %}
+      <div style="background:var(--surface2);border-radius:12px;padding:16px;
+                  border:1.5px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;
+                    margin-bottom:10px;">
+          <div style="font-weight:700;color:var(--green);">{{ wo.name }}</div>
+          <button onclick="deleteRoutine({{ wo.id }},this)"
+                  style="background:var(--red-lt);color:var(--red);border:none;
+                         border-radius:6px;padding:2px 8px;font-size:.75rem;cursor:pointer;">
+            Delete
+          </button>
+        </div>
+        {% for ex in exs[:4] %}
+        <div style="font-size:.8rem;color:var(--text2);margin-bottom:3px;">
+          &bull; {{ ex.name }} ({{ ex.sets }}×{{ ex.reps }})
+        </div>
+        {% endfor %}
+        {% if exs | length > 4 %}
+        <div style="font-size:.78rem;color:var(--text3);">+{{ exs|length - 4 }} more</div>
+        {% endif %}
+        <div style="margin-top:8px;font-size:.82rem;font-weight:700;color:var(--green);">
+          🔥 {{ exs | sum(attribute='cal') }} kcal total
+        </div>
+        <div style="font-size:.74rem;color:var(--text3);">
+          {{ wo.created_at.strftime('%d %b %Y') }}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>{# end tab-custom #}
+
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+/* ── Tabs ── */
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ── Video Modal ── */
+function playVid(id) {
+  document.getElementById('vidFrame').src =
+    'https://www.youtube.com/embed/' + id + '?autoplay=1';
+  document.getElementById('vidModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function stopVid() {
+  document.getElementById('vidFrame').src = '';
+  document.getElementById('vidModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+/* ── Edit Exercise Modal ── */
+function openEdit(dayIdx, exIdx, name, sets, reps, cal, muscle) {
+  document.getElementById('eDayIdx').value = dayIdx;
+  document.getElementById('eExIdx').value  = exIdx;
+  document.getElementById('eName').value   = name;
+  document.getElementById('eSets').value   = sets;
+  document.getElementById('eReps').value   = reps;
+  document.getElementById('eCal').value    = cal;
+  document.getElementById('eMuscle').value = muscle;
+  document.getElementById('editModal').style.display = 'flex';
+}
+function closeEdit() {
+  document.getElementById('editModal').style.display = 'none';
+}
+function saveEdit() {
+  const payload = {
+    day:    parseInt(document.getElementById('eDayIdx').value),
+    ex:     parseInt(document.getElementById('eExIdx').value),
+    name:   document.getElementById('eName').value.trim(),
+    sets:   parseInt(document.getElementById('eSets').value) || 3,
+    reps:   document.getElementById('eReps').value.trim(),
+    cal:    parseInt(document.getElementById('eCal').value) || 0,
+    muscle: document.getElementById('eMuscle').value.trim(),
+  };
+  fetch('/exercise/edit-exercise', {
+    method:  'POST',
+    headers: {'Content-Type': 'application/json'},
+    body:    JSON.stringify(payload),
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.ok) location.reload();
+    else alert('Save failed: ' + d.msg);
+  });
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { stopVid(); closeEdit(); }
+});
+
+/* ── Exercise Library Filter ── */
+function filterLib(cat) {
+  document.querySelectorAll('[id^="cat-"]').forEach(b => {
+    b.style.background = 'var(--surface)'; b.style.color = 'var(--text)';
+  });
+  const a = document.getElementById('cat-' + cat);
+  if (a) { a.style.background = 'var(--green)'; a.style.color = '#fff'; }
+  document.querySelectorAll('.lib-item').forEach(item => {
+    item.style.display = (cat === 'All' || item.dataset.cat === cat) ? '' : 'none';
+  });
+}
+
+/* ── Custom Routine Builder ── */
+let myRoutine = [];
+
+function addToRoutine(name, category, sets, reps, cal, muscle) {
+  if (myRoutine.find(e => e.name === name)) {
+    alert(name + ' is already in your routine.'); return;
+  }
+  myRoutine.push({ name, category, sets, reps, cal, muscle });
+  renderRoutine();
+}
+function removeFromRoutine(i) { myRoutine.splice(i, 1); renderRoutine(); }
+function clearRoutine()        { myRoutine = [];          renderRoutine(); }
+
+function renderRoutine() {
+  const list  = document.getElementById('routineList');
+  const empty = document.getElementById('emptyMsg');
+  const stats = document.getElementById('routineStats');
+  empty.style.display = myRoutine.length ? 'none' : 'block';
+  const totalCal = myRoutine.reduce((s, e) => s + e.cal, 0);
+  stats.textContent = myRoutine.length
+    ? `${myRoutine.length} exercises · 🔥 ${totalCal} kcal` : '';
+  [...list.children].forEach(c => { if (c.id !== 'emptyMsg') c.remove(); });
+  myRoutine.forEach((ex, i) => {
+    const d = document.createElement('div');
+    d.style.cssText =
+      'padding:10px 14px;background:var(--green-lt);border-radius:8px;' +
+      'display:flex;justify-content:space-between;align-items:center;' +
+      'border:1.5px solid var(--green-mid);margin-bottom:4px;';
+    d.innerHTML =
+      `<div>
+        <div style="font-weight:600;font-size:.9rem;color:var(--green);">${ex.name}</div>
+        <div style="font-size:.76rem;color:var(--text2);">${ex.sets}×${ex.reps} · 🔥${ex.cal} kcal</div>
+       </div>
+       <button onclick="removeFromRoutine(${i})"
+               style="background:var(--red-lt);color:var(--red);border:none;
+                      border-radius:6px;padding:3px 9px;font-size:.8rem;cursor:pointer;">✕</button>`;
+    list.appendChild(d);
+  });
+}
+
+function saveRoutine() {
+  const name = document.getElementById('routineName').value.trim();
+  if (!name)            { alert('Please enter a routine name.');     return; }
+  if (!myRoutine.length){ alert('Add at least one exercise first.'); return; }
+  fetch('/exercise/save-custom', {
+    method:  'POST',
+    headers: {'Content-Type': 'application/json'},
+    body:    JSON.stringify({ name, exercises: myRoutine }),
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.ok) { alert(`✅ "${d.name}" saved!`); location.reload(); }
+    else alert('Error: ' + d.msg);
+  });
+}
+
+function deleteRoutine(id, btn) {
+  if (!confirm('Delete this routine?')) return;
+  fetch('/exercise/delete-custom/' + id, { method: 'POST' })
+    .then(r => r.json())
+    .then(d => { if (d.ok) btn.closest('[style]').remove(); });
+}
+</script>
+{% endblock %}

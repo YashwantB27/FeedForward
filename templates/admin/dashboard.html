@@ -1,0 +1,43 @@
+{% extends 'base.html' %}{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<h1 style="font-size:2rem;font-weight:800;color:#1B6B2F;margin-bottom:24px;">⚙️ Admin Dashboard</h1>
+<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:24px;">
+  {% for icon,val,label,color in [('👥',stats.users,'Total Users','#1565C0'),('📦',stats.listings,'Total Listings','#1B6B2F'),('✅',stats.claimed,'Claimed','#4A148C'),('🟢',stats.active,'Active','#00897B'),('🥗',stats.kg_saved,'KG Saved','#E65100'),('🍽️',stats.meals,'Meals Given','#C62828')] %}
+  <div class="card" style="text-align:center;border-top:4px solid {{ color }};">
+    <div>{{ icon }}</div>
+    <div style="font-size:1.5rem;font-weight:800;color:{{ color }};">{{ val }}</div>
+    <div style="color:#757575;font-size:.75rem;">{{ label }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 class="section-title" style="margin:0;">👥 Recent Users</h3>
+      <a href="{{ url_for('admin.users') }}" style="color:#1B6B2F;font-size:.85rem;">View All →</a>
+    </div>
+    {% for u in recent_users %}
+    <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #F5F5F5;">
+      <div style="width:36px;height:36px;background:#E8F5E9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:#1B6B2F;">{{ u.name[0] }}</div>
+      <div style="flex:1;"><div style="font-weight:600;font-size:.9rem;">{{ u.name }}</div><div style="color:#757575;font-size:.8rem;">{{ u.email }} • {{ u.role }}</div></div>
+      {% if u.role != 'admin' %}<a href="{{ url_for('admin.make_admin', uid=u.id) }}" style="font-size:.75rem;color:#1565C0;">Make Admin</a>{% else %}<span style="font-size:.75rem;background:#E8F5E9;color:#1B6B2F;padding:2px 8px;border-radius:10px;">Admin</span>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 class="section-title" style="margin:0;">📦 Recent Food Listings</h3>
+      <a href="{{ url_for('admin.listings') }}" style="color:#1B6B2F;font-size:.85rem;">View All →</a>
+    </div>
+    {% for f in recent_food %}
+    <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #F5F5F5;">
+      <div style="font-size:1.5rem;">🍱</div>
+      <div style="flex:1;"><div style="font-weight:600;font-size:.9rem;">{{ f.food_name }}</div><div style="color:#757575;font-size:.8rem;">{{ f.quantity }} • {{ f.location }}</div></div>
+      <span class="badge-{{ 'green' if f.status=='available' else 'yellow' if f.status=='claimed' else 'red' }}">{{ f.status }}</span>
+      <a href="{{ url_for('admin.delete_listing', lid=f.id) }}" onclick="return confirm('Delete?')" style="color:#C62828;font-size:.8rem;">🗑</a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
