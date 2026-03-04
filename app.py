@@ -12,8 +12,14 @@ except ImportError:
 
 def create_app():
     app = Flask(__name__)
+
+    # Database URL — uses PostgreSQL if DATABASE_URL env var is set, else falls back to SQLite locally
+    DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///feedforward.db')
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
     app.config['SECRET_KEY']                     = os.environ.get('SECRET_KEY', 'feedforward_local_2025')
-    app.config['SQLALCHEMY_DATABASE_URI']        = 'sqlite:///feedforward.db'
+    app.config['SQLALCHEMY_DATABASE_URI']        = DATABASE_URL
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['UPLOAD_FOLDER']                  = 'static/uploads'
     app.config['MAX_CONTENT_LENGTH']             = 5 * 1024 * 1024
