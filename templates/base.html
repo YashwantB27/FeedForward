@@ -92,6 +92,52 @@
       min-width: 16px; text-align: center;
       display: none;
     }
+
+    /* ── Toast Notifications ── */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .ff-toast {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-left: 4px solid var(--green);
+      border-radius: 12px;
+      padding: 12px 16px;
+      min-width: 280px;
+      max-width: 340px;
+      box-shadow: 0 6px 24px var(--shadow-hov);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      pointer-events: all;
+      animation: toast-in .35s ease;
+      transition: opacity .3s, transform .3s;
+    }
+    .ff-toast.toast-hide {
+      opacity: 0;
+      transform: translateX(40px);
+    }
+    .ff-toast-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 1px; }
+    .ff-toast-body { flex: 1; }
+    .ff-toast-title { font-weight: 700; font-size: .88rem; color: var(--text); margin-bottom: 2px; }
+    .ff-toast-msg   { font-size: .8rem; color: var(--text2); line-height: 1.4; }
+    .ff-toast-close {
+      background: none; border: none; color: var(--text3);
+      cursor: pointer; font-size: 1rem; padding: 0;
+      flex-shrink: 0; line-height: 1;
+    }
+    .ff-toast-close:hover { color: var(--red); }
+    @keyframes toast-in {
+      from { opacity: 0; transform: translateX(40px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
   </style>
   {% block head %}{% endblock %}
 </head>
@@ -268,26 +314,86 @@
 </script>
 
 {% if current_user.is_authenticated %}
-<!-- ── Poll for unread counts every 30s ─────────────────────────────────── -->
+<!-- ── Toast Container ───────────────────────────────────────────────────── -->
+<div id="toast-container"></div>
+
+<!-- ── Toast + Badge Polling Script ─────────────────────────────────────── -->
 <script>
-function refreshBadges() {
-  fetch('/inbox/notifications/count')
-    .then(r => r.json())
-    .then(data => {
-      var nb = document.getElementById('notifBadge');
-      var mb = document.getElementById('msgBadge');
-      if (nb) {
-        nb.textContent = data.notifications > 9 ? '9+' : data.notifications;
-        nb.style.display = data.notifications > 0 ? 'block' : 'none';
-      }
-      if (mb) {
-        mb.textContent = data.messages > 9 ? '9+' : data.messages;
-        mb.style.display = data.messages > 0 ? 'block' : 'none';
-      }
-    }).catch(() => {});
-}
-refreshBadges();
-setInterval(refreshBadges, 30000);
+  var _prevNotifCount = null;
+  var _prevMsgCount   = null;
+
+  /* Show a toast popup */
+  function showToast(icon, title, message, link) {
+    var container = document.getElementById('toast-container');
+    var toast     = document.createElement('div');
+    toast.className = 'ff-toast';
+    toast.innerHTML =
+      '<div class="ff-toast-icon">' + icon + '</div>' +
+      '<div class="ff-toast-body">' +
+        '<div class="ff-toast-title">' + title + '</div>' +
+        '<div class="ff-toast-msg">'  + message + '</div>' +
+      '</div>' +
+      '<button class="ff-toast-close" onclick="dismissToast(this)">✕</button>';
+
+    /* Clicking the toast body navigates to link */
+    if (link) {
+      toast.style.cursor = 'pointer';
+      toast.addEventListener('click', function(e) {
+        if (!e.target.classList.contains('ff-toast-close')) {
+          window.location.href = link;
+        }
+      });
+    }
+
+    container.appendChild(toast);
+
+    /* Auto-dismiss after 5 seconds */
+    setTimeout(function() { dismissToast(toast); }, 5000);
+  }
+
+  function dismissToast(el) {
+    var toast = el.classList && el.classList.contains('ff-toast') ? el : el.closest('.ff-toast');
+    if (!toast) return;
+    toast.classList.add('toast-hide');
+    setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 350);
+  }
+
+  /* Poll for unread counts every 30s */
+  function refreshBadges() {
+    fetch('/inbox/notifications/count')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var nb = document.getElementById('notifBadge');
+        var mb = document.getElementById('msgBadge');
+
+        /* Update notification badge */
+        if (nb) {
+          nb.textContent    = data.notifications > 9 ? '9+' : data.notifications;
+          nb.style.display  = data.notifications > 0 ? 'block' : 'none';
+        }
+
+        /* Update message badge */
+        if (mb) {
+          mb.textContent   = data.messages > 9 ? '9+' : data.messages;
+          mb.style.display = data.messages > 0 ? 'block' : 'none';
+        }
+
+        /* Show toast only when count INCREASES (new notification arrived) */
+        if (_prevNotifCount !== null && data.notifications > _prevNotifCount) {
+          showToast('🔔', 'New Notification', 'You have ' + data.notifications + ' unread notification(s).', '/inbox/notifications');
+        }
+        if (_prevMsgCount !== null && data.messages > _prevMsgCount) {
+          showToast('💬', 'New Message', 'You have ' + data.messages + ' unread message(s).', '/inbox/messages');
+        }
+
+        _prevNotifCount = data.notifications;
+        _prevMsgCount   = data.messages;
+
+      }).catch(function() {});
+  }
+
+  refreshBadges();
+  setInterval(refreshBadges, 30000);
 </script>
 {% endif %}
 

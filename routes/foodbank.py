@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from extensions import db
 from models.models import FoodListing, DonorRating
 from datetime import datetime
+from utils.notify import send_notification, notify_recipients_of_donation
 import os, math
 
 foodbank = Blueprint('foodbank', __name__, url_prefix='/foodbank')
@@ -127,7 +128,6 @@ def donate():
         db.session.flush()  # get listing.id before commit
 
         # ── Notify all recipients about the new donation ──────────────────
-        from routes.inbox import notify_recipients_of_donation
         notify_recipients_of_donation(listing)
         # ─────────────────────────────────────────────────────────────────
 
@@ -149,7 +149,6 @@ def claim(listing_id):
     listing.claimed_at = datetime.utcnow()
 
     # Notify the donor that their listing was claimed
-    from routes.inbox import send_notification
     send_notification(
         user_id = listing.donor_id,
         type_   = 'claim',
@@ -169,7 +168,6 @@ def mark_pickup(listing_id):
         listing.status       = 'picked_up'
         listing.picked_up_at = datetime.utcnow()
 
-        from routes.inbox import send_notification
         send_notification(
             user_id = listing.donor_id,
             type_   = 'pickup',

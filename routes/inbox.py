@@ -3,35 +3,10 @@ from flask_login import login_required, current_user
 from extensions import db
 from models.models import Notification, Message, FoodListing
 from models.user import User
+from utils.notify import send_notification, notify_recipients_of_donation
 from datetime import datetime
 
 inbox = Blueprint('inbox', __name__, url_prefix='/inbox')
-
-
-def send_notification(user_id, type_, title, body, link=''):
-    """Helper to create a notification for a user."""
-    notif = Notification(
-        user_id=user_id, type=type_,
-        title=title, body=body, link=link
-    )
-    db.session.add(notif)
-    # Don't commit here — caller commits
-
-
-def notify_recipients_of_donation(listing):
-    """Notify all users with role 'recipient' about a new food listing."""
-    recipients = User.query.filter(
-        User.role.in_(['recipient', 'user']),
-        User.id != listing.donor_id
-    ).all()
-    for r in recipients:
-        send_notification(
-            user_id = r.id,
-            type_   = 'new_donation',
-            title   = '🍱 New Food Available!',
-            body    = f'{listing.food_name} ({listing.quantity}) is available at {listing.location}.',
-            link    = url_for('foodbank.index')
-        )
 
 
 # ── Notification routes ───────────────────────────────────────────────────────
@@ -49,7 +24,7 @@ def notifications():
 @inbox.route('/notifications/count')
 @login_required
 def notif_count():
-    count = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
+    count       = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
     unread_msgs = Message.query.filter_by(receiver_id=current_user.id, is_read=False).count()
     return jsonify({'notifications': count, 'messages': unread_msgs, 'total': count + unread_msgs})
 
@@ -68,7 +43,6 @@ def mark_notifs_read():
 def messages():
     """Show all conversations (unique users messaged with)."""
     from sqlalchemy import or_
-    # Get all unique conversation partners
     sent     = Message.query.filter_by(sender_id=current_user.id).all()
     received = Message.query.filter_by(receiver_id=current_user.id).all()
 
@@ -98,7 +72,6 @@ def messages():
             'unread':   unread,
         })
 
-    # Sort by latest message
     conversations.sort(key=lambda c: c['last_msg'].created_at, reverse=True)
     return render_template('inbox/messages.html', conversations=conversations)
 
@@ -108,7 +81,7 @@ def messages():
 def conversation(partner_id):
     """View and send messages in a conversation thread."""
     from sqlalchemy import or_
-    partner = User.query.get_or_404(partner_id)
+    partner    = User.query.get_or_404(partner_id)
     listing_id = request.args.get('listing_id', type=int)
     listing    = FoodListing.query.get(listing_id) if listing_id else None
 
@@ -185,9 +158,9 @@ def send_ajax():
     db.session.commit()
 
     return jsonify({
-        'ok':        True,
-        'id':        msg.id,
-        'body':      msg.body,
-        'time_ago':  msg.time_ago,
-        'sender':    current_user.name,
+        'ok':       True,
+        'id':       msg.id,
+        'body':     msg.body,
+        'time_ago': msg.time_ago,
+        'sender':   current_user.name,
     })
