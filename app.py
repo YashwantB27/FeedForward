@@ -1,8 +1,10 @@
 from flask import Flask, session
 from extensions import db, login_manager, bcrypt
+from flask_migrate import Migrate
 from models.user import User
 from translations import get_translations
 import json, os
+
 
 try:
     from dotenv import load_dotenv
@@ -28,6 +30,7 @@ def create_app():
     db.init_app(app)
     login_manager.init_app(app)
     bcrypt.init_app(app)
+    migrate = Migrate(app, db)
 
     login_manager.login_view             = 'auth.login'
     login_manager.login_message          = 'Please login to access this page.'
