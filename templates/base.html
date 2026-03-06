@@ -4,6 +4,18 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>{% block title %}FeedForward{% endblock %} 🌱</title>
+
+  <!-- ── OG / Social Meta Tags ── -->
+  <meta property="og:title"       content="{% block og_title %}FeedForward — Eat Smart. Move Well. Give Back.{% endblock %}"/>
+  <meta property="og:description" content="{% block og_desc %}India's first AI platform combining sustainable diet, fitness & community food donation.{% endblock %}"/>
+  <meta property="og:type"        content="website"/>
+  <meta property="og:url"         content="https://feedforward-61pa.onrender.com"/>
+  <meta property="og:image"       content="{% block og_image %}https://feedforward-61pa.onrender.com/static/og-image.png{% endblock %}"/>
+  <meta name="twitter:card"       content="summary_large_image"/>
+  <meta name="twitter:title"      content="FeedForward — Eat Smart. Move Well. Give Back."/>
+  <meta name="twitter:description" content="India's first AI platform combining sustainable diet, fitness & community food donation."/>
+  <meta name="description"        content="FeedForward — AI-powered diet planning, fitness coaching, and community food donation. Built for India. Supporting 6 UN SDGs."/>
+
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -30,7 +42,7 @@
     }
     *,*::before,*::after{box-sizing:border-box;}
     html{scroll-behavior:smooth;}
-    body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);margin:0;line-height:1.6;transition:background .3s,color .3s;}
+    body{font-family:'DM Sans','Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);margin:0;line-height:1.6;transition:background .3s,color .3s;}
     a{text-decoration:none;}
     .btn-primary{background:var(--green);color:#fff;padding:10px 24px;border-radius:8px;font-weight:600;display:inline-block;border:none;cursor:pointer;transition:background .2s,transform .15s,box-shadow .2s;}
     .btn-primary:hover{background:var(--green-dk);transform:translateY(-2px);box-shadow:0 4px 14px rgba(27,107,47,.35);color:#fff;}
@@ -97,7 +109,7 @@
     /* ── Toast Notifications ── */
     #toast-container {
       position: fixed;
-      bottom: 24px;
+      bottom: 100px; /* lifted above chatbot on mobile */
       right: 24px;
       z-index: 99999;
       display: flex;
@@ -105,6 +117,8 @@
       gap: 10px;
       pointer-events: none;
     }
+    @media(min-width:600px){ #toast-container{ bottom: 24px; } }
+
     .ff-toast {
       background: var(--surface);
       border: 1.5px solid var(--border);
@@ -121,10 +135,7 @@
       animation: toast-in .35s ease;
       transition: opacity .3s, transform .3s;
     }
-    .ff-toast.toast-hide {
-      opacity: 0;
-      transform: translateX(40px);
-    }
+    .ff-toast.toast-hide { opacity: 0; transform: translateX(40px); }
     .ff-toast-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 1px; }
     .ff-toast-body { flex: 1; }
     .ff-toast-title { font-weight: 700; font-size: .88rem; color: var(--text); margin-bottom: 2px; }
@@ -139,14 +150,50 @@
       from { opacity: 0; transform: translateX(40px); }
       to   { opacity: 1; transform: translateX(0); }
     }
+
+    /* ── Global Skeleton Loader ── */
+    .skeleton {
+      background: linear-gradient(90deg,
+        var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%);
+      background-size: 200% 100%;
+      animation: skeletonShimmer 1.6s infinite;
+      border-radius: 8px;
+    }
+    @keyframes skeletonShimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .skeleton-text  { height: 14px; margin-bottom: 8px; border-radius: 4px; }
+    .skeleton-title { height: 22px; margin-bottom: 12px; border-radius: 4px; }
+    .skeleton-card  {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 24px;
+    }
+
+    /* ── Page load progress bar ── */
+    #ff-progress {
+      position: fixed; top: 0; left: 0; height: 3px; z-index: 99999;
+      background: linear-gradient(90deg, var(--green), #c5e84a);
+      width: 0%; transition: width .4s ease;
+      pointer-events: none;
+    }
   </style>
   {% block head %}{% endblock %}
 </head>
+
+<!-- Page load progress bar -->
+<div id="ff-progress"></div>
 
 <script>
   (function(){
     var t = localStorage.getItem('ff_theme') || 'light';
     document.documentElement.setAttribute('data-theme', t);
+    /* Animate progress bar on page load */
+    var bar = document.getElementById('ff-progress');
+    if(bar){ bar.style.width='70%'; }
+    window.addEventListener('load', function(){
+      if(bar){ bar.style.width='100%'; setTimeout(function(){ bar.style.opacity='0'; },400); }
+    });
   })();
 </script>
 
@@ -163,7 +210,7 @@
     <a href="{{ url_for('main.index') }}"
        style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
       <span style="font-size:1.4rem;">🌱</span>
-      <span style="font-size:1.1rem;font-weight:800;color:var(--green);">FeedForward</span>
+      <span style="font-size:1.1rem;font-weight:800;color:var(--green);font-family:'Fraunces',serif;">FeedForward</span>
     </a>
 
     <!-- Page Links -->
@@ -207,7 +254,7 @@
       <!-- 🌙 Dark Mode Toggle -->
       <button id="themeToggle" onclick="toggleTheme()" title="Toggle theme">
         <span id="themeIcon">🌙</span>
-        <span id="themeLabel">Dark</span>
+        <span id="themeLabel" style="display:none;" class="hide-sm">Dark</span>
       </button>
 
       <!-- 🌐 Language Switcher -->
@@ -285,11 +332,18 @@
 <footer style="background:var(--green-dk);color:#fff;padding:40px 24px;margin-top:60px;text-align:center;">
   <div style="max-width:1280px;margin:0 auto;">
     <div style="font-size:2rem;margin-bottom:8px;">🌱</div>
-    <div style="font-size:1.2rem;font-weight:700;margin-bottom:4px;">FeedForward</div>
+    <div style="font-size:1.3rem;font-weight:800;margin-bottom:4px;font-family:'Fraunces',serif;">FeedForward</div>
     <div style="opacity:.85;margin-bottom:16px;">{{ t.footer_tagline }}</div>
     <div style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;opacity:.7;font-size:.85rem;margin-bottom:14px;">
       <span>🎯 SDG 1</span><span>🌾 SDG 2</span><span>💚 SDG 3</span>
       <span>♻️ SDG 12</span><span>🌍 SDG 13</span><span>🤝 SDG 17</span>
+    </div>
+    <!-- Footer links -->
+    <div style="display:flex;justify-content:center;gap:24px;flex-wrap:wrap;margin-bottom:16px;font-size:.85rem;">
+      <a href="/about"  style="color:rgba(255,255,255,.6);transition:color .2s;" onmouseover="this.style.color='#c5e84a'" onmouseout="this.style.color='rgba(255,255,255,.6)'">About</a>
+      <a href="/privacy" style="color:rgba(255,255,255,.6);transition:color .2s;" onmouseover="this.style.color='#c5e84a'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Privacy</a>
+      <a href="/contact" style="color:rgba(255,255,255,.6);transition:color .2s;" onmouseover="this.style.color='#c5e84a'" onmouseout="this.style.color='rgba(255,255,255,.6)'">Contact</a>
+      <a href="https://github.com" target="_blank" style="color:rgba(255,255,255,.6);transition:color .2s;" onmouseover="this.style.color='#c5e84a'" onmouseout="this.style.color='rgba(255,255,255,.6)'">GitHub</a>
     </div>
     <div style="opacity:.5;font-size:.8rem;">{{ t.footer_built }}</div>
   </div>
@@ -302,8 +356,8 @@
     var icon = document.getElementById('themeIcon');
     var label = document.getElementById('themeLabel');
     if (!icon) return;
-    if (theme === 'dark') { icon.textContent='☀️'; label.textContent='Light'; }
-    else                  { icon.textContent='🌙'; label.textContent='Dark';  }
+    if (theme === 'dark') { icon.textContent='☀️'; if(label)label.textContent='Light'; }
+    else                  { icon.textContent='🌙'; if(label)label.textContent='Dark';  }
   }
   function toggleTheme() {
     var current = document.documentElement.getAttribute('data-theme') || 'light';
@@ -323,7 +377,6 @@
   var _prevNotifCount = null;
   var _prevMsgCount   = null;
 
-  /* Show a toast popup */
   function showToast(icon, title, message, link) {
     var container = document.getElementById('toast-container');
     var toast     = document.createElement('div');
@@ -335,64 +388,36 @@
         '<div class="ff-toast-msg">'  + message + '</div>' +
       '</div>' +
       '<button class="ff-toast-close" onclick="dismissToast(this)">✕</button>';
-
-    /* Clicking the toast body navigates to link */
     if (link) {
       toast.style.cursor = 'pointer';
       toast.addEventListener('click', function(e) {
-        if (!e.target.classList.contains('ff-toast-close')) {
-          window.location.href = link;
-        }
+        if (!e.target.classList.contains('ff-toast-close')) window.location.href = link;
       });
     }
-
     container.appendChild(toast);
-
-    /* Auto-dismiss after 5 seconds */
     setTimeout(function() { dismissToast(toast); }, 5000);
   }
-
   function dismissToast(el) {
     var toast = el.classList && el.classList.contains('ff-toast') ? el : el.closest('.ff-toast');
     if (!toast) return;
     toast.classList.add('toast-hide');
     setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 350);
   }
-
-  /* Poll for unread counts every 30s */
   function refreshBadges() {
     fetch('/inbox/notifications/count')
       .then(function(r) { return r.json(); })
       .then(function(data) {
         var nb = document.getElementById('notifBadge');
         var mb = document.getElementById('msgBadge');
-
-        /* Update notification badge */
-        if (nb) {
-          nb.textContent    = data.notifications > 9 ? '9+' : data.notifications;
-          nb.style.display  = data.notifications > 0 ? 'block' : 'none';
-        }
-
-        /* Update message badge */
-        if (mb) {
-          mb.textContent   = data.messages > 9 ? '9+' : data.messages;
-          mb.style.display = data.messages > 0 ? 'block' : 'none';
-        }
-
-        /* Show toast only when count INCREASES (new notification arrived) */
-        if (_prevNotifCount !== null && data.notifications > _prevNotifCount) {
-          showToast('🔔', 'New Notification', 'You have ' + data.notifications + ' unread notification(s).', '/inbox/notifications');
-        }
-        if (_prevMsgCount !== null && data.messages > _prevMsgCount) {
-          showToast('💬', 'New Message', 'You have ' + data.messages + ' unread message(s).', '/inbox/messages');
-        }
-
-        _prevNotifCount = data.notifications;
-        _prevMsgCount   = data.messages;
-
+        if (nb) { nb.textContent=data.notifications>9?'9+':data.notifications; nb.style.display=data.notifications>0?'block':'none'; }
+        if (mb) { mb.textContent=data.messages>9?'9+':data.messages; mb.style.display=data.messages>0?'block':'none'; }
+        if (_prevNotifCount!==null && data.notifications>_prevNotifCount)
+          showToast('🔔','New Notification','You have '+data.notifications+' unread notification(s).','/inbox/notifications');
+        if (_prevMsgCount!==null && data.messages>_prevMsgCount)
+          showToast('💬','New Message','You have '+data.messages+' unread message(s).','/inbox/messages');
+        _prevNotifCount=data.notifications; _prevMsgCount=data.messages;
       }).catch(function() {});
   }
-
   refreshBadges();
   setInterval(refreshBadges, 30000);
 </script>
@@ -400,12 +425,46 @@
 
 <!-- ════════════════════════ FEEDGENIE CHATBOT ═══════════════════════════════ -->
 {% if current_user.is_authenticated %}
+
+<!-- FIX: On mobile, chatbot button sits at bottom:20px right:16px
+     On desktop stays at bottom:28px right:28px
+     Chat window repositions on small screens to avoid overflow -->
+<style>
+  #feedgenie-btn {
+    position:fixed;
+    bottom:20px; right:16px;   /* mobile default */
+    z-index:9000;
+    width:52px; height:52px;
+    background:var(--green); border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.5rem; cursor:pointer;
+    box-shadow:0 4px 20px rgba(0,0,0,.3);
+    transition:transform .2s, box-shadow .2s;
+  }
+  @media(min-width:600px){
+    #feedgenie-btn { bottom:28px; right:28px; width:58px; height:58px; font-size:1.6rem; }
+  }
+  #feedgenie-window {
+    position:fixed;
+    z-index:8999;
+    background:var(--surface);
+    border-radius:18px;
+    box-shadow:0 8px 40px rgba(0,0,0,.25);
+    border:1.5px solid var(--border);
+    flex-direction:column;
+    overflow:hidden;
+    /* Mobile: full-width panel from bottom */
+    bottom:80px; left:8px; right:8px; height:480px;
+  }
+  @media(min-width:600px){
+    #feedgenie-window {
+      bottom:96px; right:28px; left:auto;
+      width:370px; height:520px;
+    }
+  }
+</style>
+
 <div id="feedgenie-btn" onclick="toggleChat()"
-     style="position:fixed;bottom:28px;right:28px;z-index:9000;
-            width:58px;height:58px;background:var(--green);border-radius:50%;
-            display:flex;align-items:center;justify-content:center;
-            font-size:1.6rem;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.3);
-            transition:transform .2s,box-shadow .2s;"
      onmouseover="this.style.transform='scale(1.12)'"
      onmouseout="this.style.transform='scale(1)'"
      title="Chat with FeedGenie">
@@ -414,11 +473,7 @@
               border-radius:10px;padding:1px 6px;font-size:.62rem;font-weight:800;line-height:1.4;">AI</div>
 </div>
 
-<div id="feedgenie-window"
-     style="display:none;position:fixed;bottom:96px;right:28px;z-index:8999;
-            width:370px;height:520px;background:var(--surface);border-radius:18px;
-            box-shadow:0 8px 40px rgba(0,0,0,.25);border:1.5px solid var(--border);
-            display:none;flex-direction:column;overflow:hidden;">
+<div id="feedgenie-window" style="display:none;">
   <div style="background:var(--green);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;">
     <div style="display:flex;align-items:center;gap:10px;">
       <div style="font-size:1.4rem;">🧞</div>

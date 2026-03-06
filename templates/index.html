@@ -2,349 +2,131 @@
 {% block title %}FeedForward — Eat Smart. Move Well. Give Back.{% endblock %}
 
 {% block head %}
-<!-- Redesign fonts — can be moved to base.html <head> for global use -->
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
 <style>
-  /* ── Page-level overrides (light + dark) ───────────────────────── */
   body { font-family: 'DM Sans', 'Segoe UI', sans-serif; }
 
-  /* ── Hero ───────────────────────────────────────────────────────── */
+  /* ── Hero ── */
   .ff-hero {
-    position: relative;
-    border-radius: 24px;
-    overflow: hidden;
-    margin-bottom: 56px;
-    background: linear-gradient(135deg, #0D3B1A 0%, #1B6B2F 55%, #2E7D32 100%);
-    padding: 0;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    min-height: 480px;
-    gap: 0;
+    position:relative; border-radius:24px; overflow:hidden;
+    margin-bottom:56px;
+    background:linear-gradient(135deg,#0D3B1A 0%,#1B6B2F 55%,#2E7D32 100%);
+    display:grid; grid-template-columns:1fr 1fr; min-height:480px; gap:0;
   }
-  @media(max-width:820px){ .ff-hero{ grid-template-columns:1fr; } .ff-hero-visual{ display:none; } }
+  @media(max-width:820px){ .ff-hero{grid-template-columns:1fr;} .ff-hero-visual{display:none;} }
+  .ff-hero::before{content:'';position:absolute;top:-80px;right:-80px;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.07) 0%,transparent 70%);pointer-events:none;}
+  .ff-hero::after{content:'';position:absolute;bottom:-60px;left:30%;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.05) 0%,transparent 70%);pointer-events:none;}
 
-  /* Organic blobs */
-  .ff-hero::before {
-    content:'';
-    position:absolute; top:-80px; right:-80px;
-    width:420px; height:420px;
-    border-radius:50%;
-    background: radial-gradient(circle, rgba(255,255,255,.07) 0%, transparent 70%);
-    pointer-events:none;
-  }
-  .ff-hero::after {
-    content:'';
-    position:absolute; bottom:-60px; left:30%;
-    width:300px; height:300px;
-    border-radius:50%;
-    background: radial-gradient(circle, rgba(255,255,255,.05) 0%, transparent 70%);
-    pointer-events:none;
-  }
+  .ff-hero-text{padding:64px 48px;display:flex;flex-direction:column;justify-content:center;position:relative;z-index:2;}
+  @media(max-width:820px){.ff-hero-text{padding:40px 28px;}}
 
-  .ff-hero-text {
-    padding: 64px 48px;
-    display: flex; flex-direction: column; justify-content: center;
-    position: relative; z-index: 2;
-  }
+  .ff-eyebrow{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#c5e84a;padding:5px 14px;border-radius:20px;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600;margin-bottom:24px;width:fit-content;animation:ffFadeUp .7s ease both;}
+  .ff-hero h1{font-family:'Fraunces',serif;font-size:clamp(2.4rem,4vw,3.8rem);font-weight:900;line-height:1.05;letter-spacing:-.03em;color:#fff;margin:0 0 20px;animation:ffFadeUp .7s .08s ease both;}
+  .ff-hero h1 em{font-style:italic;color:#c5e84a;display:block;}
+  .ff-hero-sub{font-size:1rem;line-height:1.7;color:rgba(255,255,255,.75);max-width:420px;margin-bottom:32px;font-weight:300;animation:ffFadeUp .7s .16s ease both;}
+  .ff-hero-btns{display:flex;gap:12px;flex-wrap:wrap;animation:ffFadeUp .7s .24s ease both;}
+  .ff-btn-white{background:#fff;color:var(--green);padding:13px 28px;border-radius:50px;font-weight:700;font-size:.95rem;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:all .25s;box-shadow:0 4px 20px rgba(0,0,0,.15);}
+  .ff-btn-white:hover{background:#c5e84a;color:#0D3B1A;transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.2);}
+  .ff-btn-outline{border:2px solid rgba(255,255,255,.45);color:#fff;padding:12px 28px;border-radius:50px;font-weight:600;font-size:.95rem;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:all .25s;}
+  .ff-btn-outline:hover{border-color:#c5e84a;color:#c5e84a;transform:translateY(-2px);}
 
-  .ff-eyebrow {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(255,255,255,.12);
-    border: 1px solid rgba(255,255,255,.2);
-    color: #c5e84a;
-    padding: 5px 14px; border-radius: 20px;
-    font-size: .75rem; letter-spacing: .1em; text-transform: uppercase;
-    font-weight: 600;
-    margin-bottom: 24px;
-    width: fit-content;
-    animation: ffFadeUp .7s ease both;
-  }
+  /* Hero visual panel */
+  .ff-hero-visual{position:relative;z-index:2;display:flex;flex-direction:column;justify-content:center;padding:40px 40px 40px 0;gap:12px;animation:ffFadeUp .7s .32s ease both;}
+  .ff-card-glass{background:rgba(255,255,255,.08);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.15);border-radius:18px;padding:20px 22px;}
+  .ff-card-glass-label{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:#c5e84a;margin-bottom:12px;font-weight:600;}
+  .ff-meal-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08);}
+  .ff-meal-row:last-of-type{border-bottom:none;}
+  .ff-meal-info{display:flex;align-items:center;gap:10px;}
+  .ff-meal-icon{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:1rem;}
+  .ff-meal-name{font-size:.84rem;color:#fff;font-weight:500;}
+  .ff-meal-cal{font-size:.7rem;color:rgba(255,255,255,.5);margin-top:1px;}
+  .ff-co2-pill{background:rgba(197,232,74,.15);border:1px solid rgba(197,232,74,.25);color:#c5e84a;font-size:.68rem;padding:3px 8px;border-radius:10px;font-weight:600;}
+  .ff-pbar{height:4px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:12px;overflow:hidden;}
+  .ff-pbar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,#4a7c2f,#c5e84a);width:49%;animation:ffBarGrow 1.8s 1.2s ease both;transform-origin:left;}
+  @keyframes ffBarGrow{from{width:0;}}
+  .ff-mini-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .ff-mini-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 16px;}
+  .ff-mini-icon{font-size:1.2rem;margin-bottom:6px;}
+  .ff-mini-lbl{font-size:.65rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.08em;}
+  .ff-mini-val{font-family:'Fraunces',serif;font-size:1.6rem;color:#c5e84a;font-weight:700;line-height:1;}
+  .ff-mini-sub{font-size:.68rem;color:rgba(255,255,255,.4);}
 
-  .ff-hero h1 {
-    font-family: 'Fraunces', serif;
-    font-size: clamp(2.4rem, 4vw, 3.8rem);
-    font-weight: 900;
-    line-height: 1.05;
-    letter-spacing: -.03em;
-    color: #fff;
-    margin: 0 0 20px;
-    animation: ffFadeUp .7s .08s ease both;
-  }
-  .ff-hero h1 em {
-    font-style: italic;
-    color: #c5e84a;
-    display: block;
-  }
+  /* ── Stats ── */
+  .ff-stats{display:grid;grid-template-columns:repeat(4,1fr);border-radius:20px;overflow:hidden;border:1px solid var(--border);margin-bottom:56px;box-shadow:0 4px 24px var(--shadow);}
+  @media(max-width:640px){.ff-stats{grid-template-columns:repeat(2,1fr);}}
+  .ff-stat{background:var(--surface);padding:28px 20px;text-align:center;border-right:1px solid var(--border);transition:background .3s;}
+  .ff-stat:last-child{border-right:none;}
+  .ff-stat:hover{background:var(--surface2);}
+  .ff-stat-icon{font-size:1.5rem;margin-bottom:8px;}
+  .ff-stat-num{font-family:'Fraunces',serif;font-size:2.2rem;font-weight:900;color:var(--green);line-height:1;margin-bottom:4px;}
+  .ff-stat-lbl{font-size:.78rem;color:var(--text2);letter-spacing:.04em;}
 
-  .ff-hero-sub {
-    font-size: 1rem;
-    line-height: 1.7;
-    color: rgba(255,255,255,.75);
-    max-width: 420px;
-    margin-bottom: 32px;
-    font-weight: 300;
-    animation: ffFadeUp .7s .16s ease both;
-  }
+  /* ── Section header ── */
+  .ff-section-head{text-align:center;margin-bottom:36px;}
+  .ff-section-tag{display:inline-block;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--green);background:var(--green-lt);padding:4px 14px;border-radius:20px;font-weight:700;margin-bottom:12px;}
+  .ff-section-title{font-family:'Fraunces',serif;font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:900;letter-spacing:-.025em;line-height:1.1;color:var(--text);}
+  .ff-section-title em{font-style:italic;color:var(--green);}
+  .ff-section-sub{color:var(--text2);font-size:.95rem;margin-top:10px;font-weight:300;}
 
-  .ff-hero-btns {
-    display: flex; gap: 12px; flex-wrap: wrap;
-    animation: ffFadeUp .7s .24s ease both;
-  }
-  .ff-btn-white {
-    background: #fff; color: var(--green);
-    padding: 13px 28px; border-radius: 50px;
-    font-weight: 700; font-size: .95rem;
-    text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
-    transition: all .25s;
-    box-shadow: 0 4px 20px rgba(0,0,0,.15);
-  }
-  .ff-btn-white:hover { background: #c5e84a; color: #0D3B1A; transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,.2); }
-  .ff-btn-outline {
-    border: 2px solid rgba(255,255,255,.45); color: #fff;
-    padding: 12px 28px; border-radius: 50px;
-    font-weight: 600; font-size: .95rem;
-    text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
-    transition: all .25s;
-  }
-  .ff-btn-outline:hover { border-color: #c5e84a; color: #c5e84a; transform: translateY(-2px); }
+  /* ── Bento grid ── */
+  .ff-bento{display:grid;grid-template-columns:1.5fr 1fr 1fr;grid-template-rows:auto auto;gap:16px;margin-bottom:56px;}
+  @media(max-width:900px){.ff-bento{grid-template-columns:1fr 1fr;}.ff-bento .ff-bento-lg{grid-column:span 2;}}
+  @media(max-width:560px){.ff-bento{grid-template-columns:1fr;}.ff-bento .ff-bento-lg{grid-column:span 1;}}
+  .ff-bento-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px;transition:all .35s;position:relative;overflow:hidden;}
+  .ff-bento-card:hover{transform:translateY(-5px);box-shadow:0 16px 40px var(--shadow-hov);border-color:var(--green-mid);}
+  .ff-bento-card.ff-bento-lg{grid-row:span 2;}
+  .ff-bento-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:18px;}
+  .ff-ic-green{background:var(--green-lt);}
+  .ff-ic-blue{background:var(--blue-lt);}
+  .ff-ic-orange{background:#FFF3E0;}
+  [data-theme="dark"] .ff-ic-orange{background:rgba(255,143,0,.1);}
+  .ff-bento-title{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:700;letter-spacing:-.01em;margin-bottom:8px;color:var(--text);}
+  .ff-bento-desc{font-size:.88rem;line-height:1.7;color:var(--text2);font-weight:300;}
+  .ff-bento-link{display:inline-flex;align-items:center;gap:5px;color:var(--green);font-size:.82rem;font-weight:600;text-decoration:none;margin-top:18px;letter-spacing:.03em;transition:gap .25s;}
+  .ff-bento-link:hover{gap:10px;}
+  .ff-map-visual{margin-top:20px;background:var(--surface2);border-radius:12px;padding:14px;border:1px solid var(--border);}
+  .ff-map-dots{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;margin-bottom:10px;}
+  .ff-dot{aspect-ratio:1;border-radius:50%;background:var(--border);}
+  .ff-dot.ff-da{background:var(--green);animation:ffPulse 2s infinite;}
+  .ff-dot.ff-dh{background:var(--amber);animation:ffPulse 2s .4s infinite;}
+  @keyframes ffPulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.55;transform:scale(.82);}}
+  .ff-map-legend{display:flex;gap:12px;font-size:.68rem;color:var(--text3);}
+  .ff-leg-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle;}
 
-  /* Hero right visual panel */
-  .ff-hero-visual {
-    position: relative; z-index: 2;
-    display: flex; flex-direction: column; justify-content: center;
-    padding: 40px 40px 40px 0;
-    gap: 12px;
-    animation: ffFadeUp .7s .32s ease both;
-  }
+  /* ── Testimonials ── */
+  .ff-testimonials{margin-bottom:56px;}
+  .ff-testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  @media(max-width:760px){.ff-testi-grid{grid-template-columns:1fr;}}
+  .ff-testi-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px;position:relative;transition:all .3s;}
+  .ff-testi-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px var(--shadow-hov);}
+  .ff-testi-card::before{content:'"';font-family:'Fraunces',serif;font-size:5rem;line-height:.8;color:var(--green-mid);position:absolute;top:16px;left:20px;opacity:.4;}
+  .ff-testi-quote{font-size:.92rem;line-height:1.7;color:var(--text);margin-bottom:16px;padding-top:20px;position:relative;z-index:1;}
+  .ff-testi-author{display:flex;align-items:center;gap:10px;}
+  .ff-testi-avatar{width:38px;height:38px;border-radius:50%;background:var(--green-lt);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;}
+  .ff-testi-name{font-weight:700;font-size:.88rem;color:var(--text);}
+  .ff-testi-meta{font-size:.76rem;color:var(--text2);}
+  .ff-testi-stars{color:#F59E0B;font-size:.8rem;margin-bottom:6px;}
 
-  .ff-card-glass {
-    background: rgba(255,255,255,.08);
-    backdrop-filter: blur(14px);
-    border: 1px solid rgba(255,255,255,.15);
-    border-radius: 18px;
-    padding: 20px 22px;
-  }
-  .ff-card-glass-label {
-    font-size: .68rem; letter-spacing: .1em; text-transform: uppercase;
-    color: #c5e84a; margin-bottom: 12px; font-weight: 600;
-  }
-  .ff-meal-row {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.08);
-  }
-  .ff-meal-row:last-of-type { border-bottom: none; }
-  .ff-meal-info { display: flex; align-items: center; gap: 10px; }
-  .ff-meal-icon {
-    width: 34px; height: 34px; border-radius: 10px;
-    background: rgba(255,255,255,.1);
-    display: flex; align-items: center; justify-content: center; font-size: 1rem;
-  }
-  .ff-meal-name { font-size: .84rem; color: #fff; font-weight: 500; }
-  .ff-meal-cal  { font-size: .7rem; color: rgba(255,255,255,.5); margin-top: 1px; }
-  .ff-co2-pill {
-    background: rgba(197,232,74,.15);
-    border: 1px solid rgba(197,232,74,.25);
-    color: #c5e84a; font-size: .68rem;
-    padding: 3px 8px; border-radius: 10px; font-weight: 600;
-  }
-  .ff-pbar { height: 4px; background: rgba(255,255,255,.1); border-radius: 2px; margin-top: 12px; overflow:hidden; }
-  .ff-pbar-fill {
-    height: 100%; border-radius: 2px;
-    background: linear-gradient(90deg, #4a7c2f, #c5e84a);
-    width: 49%;
-    animation: ffBarGrow 1.8s 1.2s ease both;
-    transform-origin: left;
-  }
-  @keyframes ffBarGrow { from { width: 0; } }
+  /* ── SDG ── */
+  .ff-sdg-wrap{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:36px 32px;margin-bottom:56px;text-align:center;box-shadow:0 2px 10px var(--shadow);}
+  .ff-sdg-grid{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:24px;}
+  .ff-sdg-badge{width:88px;height:88px;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:1.5px solid var(--border);transition:all .3s;cursor:default;background:var(--surface2);}
+  .ff-sdg-badge:hover{transform:translateY(-6px) rotate(2deg);border-color:var(--green);box-shadow:0 8px 24px var(--shadow);}
+  .ff-sdg-badge span{font-size:1.5rem;}
+  .ff-sdg-badge p{font-size:.58rem;color:var(--green);letter-spacing:.06em;font-weight:700;margin:0;text-transform:uppercase;}
 
-  .ff-mini-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .ff-mini-card {
-    background: rgba(255,255,255,.08);
-    border: 1px solid rgba(255,255,255,.12);
-    border-radius: 14px; padding: 14px 16px;
-  }
-  .ff-mini-icon { font-size: 1.2rem; margin-bottom: 6px; }
-  .ff-mini-lbl  { font-size: .65rem; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: .08em; }
-  .ff-mini-val  { font-family: 'Fraunces', serif; font-size: 1.6rem; color: #c5e84a; font-weight: 700; line-height: 1; }
-  .ff-mini-sub  { font-size: .68rem; color: rgba(255,255,255,.4); }
+  /* ── CTA ── */
+  .ff-cta{border-radius:24px;background:linear-gradient(135deg,#0D3B1A 0%,var(--green) 100%);padding:64px 40px;text-align:center;position:relative;overflow:hidden;margin-bottom:24px;}
+  .ff-cta::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:300px;background:radial-gradient(ellipse,rgba(255,255,255,.07) 0%,transparent 70%);pointer-events:none;}
+  .ff-cta h2{font-family:'Fraunces',serif;font-size:clamp(2rem,4vw,3rem);font-weight:900;letter-spacing:-.03em;line-height:1.1;color:#fff;margin:0 0 12px;position:relative;}
+  .ff-cta h2 em{font-style:italic;color:#c5e84a;}
+  .ff-cta p{color:rgba(255,255,255,.8);font-size:1rem;margin-bottom:28px;font-weight:300;position:relative;}
+  .ff-cta-btns{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;position:relative;}
 
-  /* ── Stats band ─────────────────────────────────────────────────── */
-  .ff-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    border-radius: 20px;
-    overflow: hidden;
-    border: 1px solid var(--border);
-    margin-bottom: 56px;
-    box-shadow: 0 4px 24px var(--shadow);
-  }
-  @media(max-width:640px){ .ff-stats{ grid-template-columns: repeat(2,1fr); } }
+  /* ── Scroll reveal ── */
+  .ff-reveal{opacity:0;transform:translateY(28px);transition:opacity .65s ease,transform .65s ease;}
+  .ff-reveal.ff-vis{opacity:1;transform:translateY(0);}
 
-  .ff-stat {
-    background: var(--surface);
-    padding: 28px 20px;
-    text-align: center;
-    border-right: 1px solid var(--border);
-    transition: background .3s;
-  }
-  .ff-stat:last-child { border-right: none; }
-  .ff-stat:hover { background: var(--surface2); }
-  .ff-stat-icon { font-size: 1.5rem; margin-bottom: 8px; }
-  .ff-stat-num {
-    font-family: 'Fraunces', serif;
-    font-size: 2.2rem; font-weight: 900;
-    color: var(--green); line-height: 1; margin-bottom: 4px;
-  }
-  .ff-stat-lbl { font-size: .78rem; color: var(--text2); letter-spacing: .04em; }
-
-  /* ── Section header ─────────────────────────────────────────────── */
-  .ff-section-head { text-align: center; margin-bottom: 36px; }
-  .ff-section-tag {
-    display: inline-block;
-    font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
-    color: var(--green); background: var(--green-lt);
-    padding: 4px 14px; border-radius: 20px; font-weight: 700;
-    margin-bottom: 12px;
-  }
-  .ff-section-title {
-    font-family: 'Fraunces', serif;
-    font-size: clamp(1.8rem, 3.5vw, 2.8rem);
-    font-weight: 900; letter-spacing: -.025em; line-height: 1.1;
-    color: var(--text);
-  }
-  .ff-section-title em { font-style: italic; color: var(--green); }
-  .ff-section-sub { color: var(--text2); font-size: .95rem; margin-top: 10px; font-weight: 300; }
-
-  /* ── Feature bento grid ─────────────────────────────────────────── */
-  .ff-bento {
-    display: grid;
-    grid-template-columns: 1.5fr 1fr 1fr;
-    grid-template-rows: auto auto;
-    gap: 16px;
-    margin-bottom: 56px;
-  }
-  @media(max-width:900px){ .ff-bento{ grid-template-columns: 1fr 1fr; } .ff-bento .ff-bento-lg{ grid-column: span 2; } }
-  @media(max-width:560px){ .ff-bento{ grid-template-columns: 1fr; } .ff-bento .ff-bento-lg{ grid-column: span 1; } }
-
-  .ff-bento-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 28px;
-    transition: all .35s;
-    position: relative; overflow: hidden;
-  }
-  .ff-bento-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 16px 40px var(--shadow-hov);
-    border-color: var(--green-mid);
-  }
-  .ff-bento-card.ff-bento-lg { grid-row: span 2; }
-
-  .ff-bento-icon {
-    width: 52px; height: 52px; border-radius: 14px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.5rem; margin-bottom: 18px;
-  }
-  .ff-ic-green  { background: var(--green-lt); }
-  .ff-ic-blue   { background: var(--blue-lt); }
-  .ff-ic-orange { background: #FFF3E0; }
-  [data-theme="dark"] .ff-ic-orange { background: rgba(255,143,0,.1); }
-
-  .ff-bento-title {
-    font-family: 'Fraunces', serif;
-    font-size: 1.2rem; font-weight: 700;
-    letter-spacing: -.01em; margin-bottom: 8px;
-    color: var(--text);
-  }
-  .ff-bento-desc { font-size: .88rem; line-height: 1.7; color: var(--text2); font-weight: 300; }
-  .ff-bento-link {
-    display: inline-flex; align-items: center; gap: 5px;
-    color: var(--green); font-size: .82rem; font-weight: 600;
-    text-decoration: none; margin-top: 18px;
-    letter-spacing: .03em; transition: gap .25s;
-  }
-  .ff-bento-link:hover { gap: 10px; }
-
-  /* Live map dots (food bank card) */
-  .ff-map-visual {
-    margin-top: 20px; background: var(--surface2);
-    border-radius: 12px; padding: 14px;
-    border: 1px solid var(--border);
-  }
-  .ff-map-dots {
-    display: grid; grid-template-columns: repeat(8,1fr); gap: 5px; margin-bottom: 10px;
-  }
-  .ff-dot {
-    aspect-ratio: 1; border-radius: 50%;
-    background: var(--border); transition: background .3s;
-  }
-  .ff-dot.ff-da { background: var(--green); animation: ffPulse 2s infinite; }
-  .ff-dot.ff-dh { background: var(--amber); animation: ffPulse 2s .4s infinite; }
-  @keyframes ffPulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.55;transform:scale(.82);} }
-  .ff-map-legend { display: flex; gap: 12px; font-size: .68rem; color: var(--text3); }
-  .ff-leg-dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:4px; vertical-align:middle; }
-
-  /* ── SDG section ────────────────────────────────────────────────── */
-  .ff-sdg-wrap {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 36px 32px;
-    margin-bottom: 56px;
-    text-align: center;
-    box-shadow: 0 2px 10px var(--shadow);
-  }
-  .ff-sdg-grid {
-    display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
-    margin-top: 24px;
-  }
-  .ff-sdg-badge {
-    width: 88px; height: 88px; border-radius: 16px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 4px; border: 1.5px solid var(--border);
-    transition: all .3s; cursor: default;
-    background: var(--surface2);
-  }
-  .ff-sdg-badge:hover { transform: translateY(-6px) rotate(2deg); border-color: var(--green); box-shadow: 0 8px 24px var(--shadow); }
-  .ff-sdg-badge span { font-size: 1.5rem; }
-  .ff-sdg-badge p { font-size: .58rem; color: var(--green); letter-spacing: .06em; font-weight: 700; margin: 0; text-transform: uppercase; }
-
-  /* ── CTA banner ─────────────────────────────────────────────────── */
-  .ff-cta {
-    border-radius: 24px;
-    background: linear-gradient(135deg, #0D3B1A 0%, var(--green) 100%);
-    padding: 64px 40px;
-    text-align: center;
-    position: relative; overflow: hidden;
-    margin-bottom: 24px;
-  }
-  .ff-cta::before {
-    content:'';
-    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-    width:600px; height:300px;
-    background: radial-gradient(ellipse, rgba(255,255,255,.07) 0%, transparent 70%);
-    pointer-events:none;
-  }
-  .ff-cta h2 {
-    font-family: 'Fraunces', serif;
-    font-size: clamp(2rem, 4vw, 3rem);
-    font-weight: 900; letter-spacing: -.03em; line-height: 1.1;
-    color: #fff; margin: 0 0 12px; position: relative;
-  }
-  .ff-cta h2 em { font-style: italic; color: #c5e84a; }
-  .ff-cta p { color: rgba(255,255,255,.8); font-size: 1rem; margin-bottom: 28px; font-weight: 300; position: relative; }
-  .ff-cta-btns { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; position: relative; }
-
-  /* ── Scroll reveal ──────────────────────────────────────────────── */
-  .ff-reveal { opacity:0; transform:translateY(28px); transition: opacity .65s ease, transform .65s ease; }
-  .ff-reveal.ff-vis { opacity:1; transform:translateY(0); }
-
-  /* ── Keyframes ──────────────────────────────────────────────────── */
-  @keyframes ffFadeUp {
-    from { opacity:0; transform:translateY(20px); }
-    to   { opacity:1; transform:translateY(0); }
-  }
+  @keyframes ffFadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
 </style>
 {% endblock %}
 
@@ -352,8 +134,6 @@
 
 <!-- ══════════════════════════════ HERO ════════════════════════════════════ -->
 <div class="ff-hero">
-
-  <!-- Left: Text -->
   <div class="ff-hero-text">
     <div class="ff-eyebrow">🌱 India's First AI Sustainability Platform</div>
     <h1>
@@ -367,86 +147,53 @@
          class="ff-btn-outline">🤝 {{ t.hero_donate }}</a>
     </div>
   </div>
-
-  <!-- Right: Live preview cards -->
   <div class="ff-hero-visual">
     <div class="ff-card-glass">
-      <div class="ff-card-glass-label">🤖 Your AI Meal Plan — Today</div>
+      <div class="ff-card-glass-label">🤖 AI Meal Plan — Today</div>
       <div class="ff-meal-row">
-        <div class="ff-meal-info">
-          <div class="ff-meal-icon">🥣</div>
-          <div>
-            <div class="ff-meal-name">Ragi Porridge + Banana</div>
-            <div class="ff-meal-cal">Breakfast · 320 kcal</div>
-          </div>
-        </div>
+        <div class="ff-meal-info"><div class="ff-meal-icon">🥣</div><div><div class="ff-meal-name">Ragi Porridge + Banana</div><div class="ff-meal-cal">Breakfast · 320 kcal</div></div></div>
         <div class="ff-co2-pill">0.3 kg CO₂</div>
       </div>
       <div class="ff-meal-row">
-        <div class="ff-meal-info">
-          <div class="ff-meal-icon">🍛</div>
-          <div>
-            <div class="ff-meal-name">Dal Makhani + Brown Rice</div>
-            <div class="ff-meal-cal">Lunch · 580 kcal</div>
-          </div>
-        </div>
+        <div class="ff-meal-info"><div class="ff-meal-icon">🍛</div><div><div class="ff-meal-name">Dal Makhani + Brown Rice</div><div class="ff-meal-cal">Lunch · 580 kcal</div></div></div>
         <div class="ff-co2-pill">0.8 kg CO₂</div>
       </div>
       <div class="ff-meal-row">
-        <div class="ff-meal-info">
-          <div class="ff-meal-icon">🥗</div>
-          <div>
-            <div class="ff-meal-name">Palak Paneer + Roti</div>
-            <div class="ff-meal-cal">Dinner · 460 kcal</div>
-          </div>
-        </div>
+        <div class="ff-meal-info"><div class="ff-meal-icon">🥗</div><div><div class="ff-meal-name">Palak Paneer + Roti</div><div class="ff-meal-cal">Dinner · 460 kcal</div></div></div>
         <div class="ff-co2-pill">0.6 kg CO₂</div>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:.72rem;color:rgba(255,255,255,.5);margin-top:12px;margin-bottom:4px;">
-        <span>Daily Carbon Score</span>
-        <span style="color:#c5e84a;">1.7 / 3.5 kg CO₂ ✓</span>
+        <span>Daily Carbon Score</span><span style="color:#c5e84a;">1.7 / 3.5 kg CO₂ ✓</span>
       </div>
       <div class="ff-pbar"><div class="ff-pbar-fill"></div></div>
     </div>
-
     <div class="ff-mini-cards">
-      <div class="ff-mini-card">
-        <div class="ff-mini-icon">💪</div>
-        <div class="ff-mini-lbl">Fitness Streak</div>
-        <div class="ff-mini-val">12</div>
-        <div class="ff-mini-sub">days active</div>
-      </div>
-      <div class="ff-mini-card">
-        <div class="ff-mini-icon">🍽️</div>
-        <div class="ff-mini-lbl">Meals Donated</div>
-        <div class="ff-mini-val">47</div>
-        <div class="ff-mini-sub">this month</div>
-      </div>
+      <div class="ff-mini-card"><div class="ff-mini-icon">💪</div><div class="ff-mini-lbl">Fitness Streak</div><div class="ff-mini-val">12</div><div class="ff-mini-sub">days active</div></div>
+      <div class="ff-mini-card"><div class="ff-mini-icon">🍽️</div><div class="ff-mini-lbl">Meals Donated</div><div class="ff-mini-val">47</div><div class="ff-mini-sub">this month</div></div>
     </div>
   </div>
-
 </div>
 
 <!-- ════════════════════════════ IMPACT STATS ══════════════════════════════ -->
 <div class="ff-stats ff-reveal">
   <div class="ff-stat">
     <div class="ff-stat-icon">🥗</div>
-    <div class="ff-stat-num" data-count="{{ stats.food_saved_kg }}">{{ stats.food_saved_kg }}</div>
+    <div class="ff-stat-num ff-counter" data-target="{{ stats.food_saved_kg }}">{{ stats.food_saved_kg }}</div>
     <div class="ff-stat-lbl">{{ t.stat_food_saved }}</div>
   </div>
   <div class="ff-stat">
     <div class="ff-stat-icon">🍽️</div>
-    <div class="ff-stat-num" data-count="{{ stats.meals_provided }}">{{ stats.meals_provided }}</div>
+    <div class="ff-stat-num ff-counter" data-target="{{ stats.meals_provided }}">{{ stats.meals_provided }}</div>
     <div class="ff-stat-lbl">{{ t.stat_meals }}</div>
   </div>
   <div class="ff-stat">
     <div class="ff-stat-icon">👥</div>
-    <div class="ff-stat-num" data-count="{{ stats.active_users }}">{{ stats.active_users }}</div>
+    <div class="ff-stat-num ff-counter" data-target="{{ stats.active_users }}">{{ stats.active_users }}</div>
     <div class="ff-stat-lbl">{{ t.stat_users }}</div>
   </div>
   <div class="ff-stat">
     <div class="ff-stat-icon">🌍</div>
-    <div class="ff-stat-num" data-count="{{ stats.co2_saved }}">{{ stats.co2_saved }}</div>
+    <div class="ff-stat-num ff-counter" data-target="{{ stats.co2_saved }}">{{ stats.co2_saved }}</div>
     <div class="ff-stat-lbl">{{ t.stat_co2 }}</div>
   </div>
 </div>
@@ -459,8 +206,6 @@
 </div>
 
 <div class="ff-bento">
-
-  <!-- Food Bank — large card -->
   <div class="ff-bento-card ff-bento-lg ff-reveal">
     <div class="ff-bento-icon ff-ic-orange">🤝</div>
     <div class="ff-bento-title">{{ t.mod_food_title }}</div>
@@ -480,37 +225,62 @@
     </div>
     <a href="{{ url_for('foodbank.index') }}" class="ff-bento-link">{{ t.explore }} →</a>
   </div>
-
-  <!-- Diet Planner -->
   <div class="ff-bento-card ff-reveal">
     <div class="ff-bento-icon ff-ic-green">🥗</div>
     <div class="ff-bento-title">{{ t.mod_diet_title }}</div>
     <p class="ff-bento-desc">{{ t.mod_diet_desc }}</p>
     <a href="{{ url_for('diet.index') }}" class="ff-bento-link">{{ t.explore }} →</a>
   </div>
-
-  <!-- Fitness -->
   <div class="ff-bento-card ff-reveal">
     <div class="ff-bento-icon ff-ic-blue">💪</div>
     <div class="ff-bento-title">{{ t.mod_ex_title }}</div>
     <p class="ff-bento-desc">{{ t.mod_ex_desc }}</p>
     <a href="{{ url_for('exercise.index') }}" class="ff-bento-link">{{ t.explore }} →</a>
   </div>
-
-  <!-- Carbon Tracking -->
   <div class="ff-bento-card ff-reveal">
     <div class="ff-bento-icon ff-ic-green">🌍</div>
     <div class="ff-bento-title">Carbon Tracking</div>
     <p class="ff-bento-desc">Every meal gets a CO₂ score. Watch your environmental footprint shrink as you make smarter food choices.</p>
   </div>
-
-  <!-- Made for India -->
   <div class="ff-bento-card ff-reveal">
     <div class="ff-bento-icon ff-ic-orange">🇮🇳</div>
     <div class="ff-bento-title">Made for India</div>
     <p class="ff-bento-desc">Telugu, Hindi, English — and South Asian cuisine built into the AI's knowledge base from day one.</p>
   </div>
+</div>
 
+<!-- ═══════════════════════════ TESTIMONIALS ══════════════════════════════ -->
+<div class="ff-testimonials">
+  <div class="ff-section-head ff-reveal">
+    <span class="ff-section-tag">Real Stories</span>
+    <h2 class="ff-section-title">What our <em>users say</em></h2>
+  </div>
+  <div class="ff-testi-grid">
+    <div class="ff-testi-card ff-reveal">
+      <div class="ff-testi-stars">★★★★★</div>
+      <p class="ff-testi-quote">The AI meal plan is spot on — it knows Telugu cuisine and gave me a plan around dal, ragi and sabzi. Lost 4 kg in 6 weeks without feeling hungry once.</p>
+      <div class="ff-testi-author">
+        <div class="ff-testi-avatar">👩</div>
+        <div><div class="ff-testi-name">Priya Reddy</div><div class="ff-testi-meta">Hyderabad · Weight Loss Goal</div></div>
+      </div>
+    </div>
+    <div class="ff-testi-card ff-reveal">
+      <div class="ff-testi-stars">★★★★★</div>
+      <p class="ff-testi-quote">I donated leftover food from our restaurant via the food bank map. Within 2 hours someone picked it up. Simple, fast, and feels genuinely impactful.</p>
+      <div class="ff-testi-author">
+        <div class="ff-testi-avatar">👨</div>
+        <div><div class="ff-testi-name">Arjun Sharma</div><div class="ff-testi-meta">Bengaluru · Restaurant Owner</div></div>
+      </div>
+    </div>
+    <div class="ff-testi-card ff-reveal">
+      <div class="ff-testi-stars">★★★★☆</div>
+      <p class="ff-testi-quote">The carbon score on each meal changed how I think about food. I switched to more plant-based meals and my CO₂ footprint dropped by 40% in a month.</p>
+      <div class="ff-testi-author">
+        <div class="ff-testi-avatar">👩</div>
+        <div><div class="ff-testi-name">Sneha Iyer</div><div class="ff-testi-meta">Chennai · Sustainability Advocate</div></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ═══════════════════════════════ SDG ════════════════════════════════════ -->
@@ -530,7 +300,7 @@
 <!-- ═══════════════════════════════ CTA ════════════════════════════════════ -->
 <div class="ff-cta ff-reveal">
   <h2>Ready to <em>FeedForward?</em></h2>
-  <p>Join thousands making healthier, more sustainable choices every day.</p>
+  <p>Start your journey towards healthier living and real community impact.</p>
   <div class="ff-cta-btns">
     <a href="{{ url_for('auth.register') }}" class="ff-btn-white">🚀 {{ t.hero_cta }}</a>
     <a href="{{ url_for('foodbank.index') if current_user.is_authenticated else url_for('auth.register') }}"
@@ -542,12 +312,45 @@
 
 {% block scripts %}
 <script>
-  /* Scroll reveal */
+  /* ── Scroll reveal ── */
   var ffObs = new IntersectionObserver(function(entries){
     entries.forEach(function(e,i){
       if(e.isIntersecting){ setTimeout(function(){ e.target.classList.add('ff-vis'); }, i*90); }
     });
   }, { threshold: 0.08 });
   document.querySelectorAll('.ff-reveal').forEach(function(el){ ffObs.observe(el); });
+
+  /* ── Animated counters — fire once when stats section enters view ── */
+  function animateCounter(el) {
+    var raw    = parseFloat(el.getAttribute('data-target')) || 0;
+    var isZero = raw === 0;
+    if (isZero) return; /* don't animate zeros */
+    var start    = 0;
+    var duration = 1600;
+    var startTs  = null;
+    function step(ts) {
+      if (!startTs) startTs = ts;
+      var progress = Math.min((ts - startTs) / duration, 1);
+      var ease     = 1 - Math.pow(1 - progress, 3);
+      var current  = raw * ease;
+      el.textContent = current >= 1000
+        ? (current / 1000).toFixed(1) + 'K'
+        : Number.isInteger(raw) ? Math.round(current) : current.toFixed(1);
+      if (progress < 1) requestAnimationFrame(step);
+      else el.textContent = raw >= 1000 ? (raw/1000).toFixed(1)+'K' : raw;
+    }
+    requestAnimationFrame(step);
+  }
+
+  var statsObs = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if (entry.isIntersecting) {
+        entry.target.querySelectorAll('.ff-counter').forEach(animateCounter);
+        statsObs.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.3 });
+  var statsEl = document.querySelector('.ff-stats');
+  if (statsEl) statsObs.observe(statsEl);
 </script>
 {% endblock %}
