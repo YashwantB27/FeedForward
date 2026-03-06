@@ -1,5 +1,56 @@
 {% extends 'base.html' %}
 {% block title %}Donate Food{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+  .flatpickr-calendar {
+    border-radius: 12px !important;
+    box-shadow: 0 8px 30px rgba(0,0,0,.15) !important;
+    border: 1.5px solid var(--border) !important;
+    background: var(--surface) !important;
+    font-family: 'Segoe UI', system-ui, sans-serif !important;
+  }
+  .flatpickr-day.selected,
+  .flatpickr-day.selected:hover {
+    background: var(--green) !important;
+    border-color: var(--green) !important;
+  }
+  .flatpickr-day:hover {
+    background: var(--green-lt) !important;
+    color: var(--green) !important;
+  }
+  .flatpickr-months .flatpickr-month,
+  .flatpickr-weekdays,
+  span.flatpickr-weekday {
+    background: var(--green) !important;
+    color: #fff !important;
+  }
+  .flatpickr-current-month .flatpickr-monthDropdown-months,
+  .flatpickr-current-month input.cur-year { color: #fff !important; }
+  .flatpickr-day { color: var(--text) !important; }
+  .flatpickr-day.flatpickr-disabled { color: var(--text3) !important; opacity: .45; }
+  .flatpickr-time input,
+  .flatpickr-time .flatpickr-am-pm {
+    color: var(--text) !important;
+    background: var(--surface) !important;
+  }
+  .flatpickr-time input:focus { background: var(--green-lt) !important; }
+  [data-theme="dark"] .flatpickr-calendar {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+  }
+  [data-theme="dark"] .flatpickr-day { color: var(--text) !important; }
+  .date-input-wrap { position: relative; }
+  .date-input-wrap input { padding-right: 42px; cursor: pointer; }
+  .date-input-wrap .cal-icon {
+    position: absolute; right: 13px; top: 50%;
+    transform: translateY(-50%); font-size: 1.1rem;
+    pointer-events: none; color: var(--green);
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div style="max-width:680px;margin:0 auto;">
   <div style="text-align:center;margin-bottom:28px;">
@@ -13,7 +64,8 @@
 
       <div class="form-group">
         <label>🍱 Food Name *</label>
-        <input type="text" name="food_name" required placeholder="e.g. Rice & Dal, Vegetable Curry, Bread Loaves"/>
+        <input type="text" name="food_name" required
+               placeholder="e.g. Rice & Dal, Vegetable Curry, Bread Loaves"/>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
@@ -33,17 +85,26 @@
         </div>
         <div class="form-group">
           <label>⚖️ Quantity *</label>
-          <input type="text" name="quantity" required placeholder="e.g. 5 kg, 20 plates, 10 packets"/>
+          <input type="text" name="quantity" required
+                 placeholder="e.g. 5 kg, 20 plates, 10 packets"/>
         </div>
       </div>
 
+      <!-- ── Expiry Date with Flatpickr calendar ── -->
       <div class="form-group">
         <label>⏰ Expiry Date & Time *</label>
-        <input type="datetime-local" name="expiry_date" required/>
-        <small style="color:var(--text3);font-size:.8rem;">When does the food expire or need to be picked up by?</small>
+        <div class="date-input-wrap">
+          <input type="text" id="expiryPicker" name="expiry_date"
+                 placeholder="Click to pick date & time…" required readonly
+                 style="background:var(--input-bg);"/>
+          <span class="cal-icon">📅</span>
+        </div>
+        <small style="color:var(--text3);font-size:.8rem;">
+          When does the food expire or need to be picked up by?
+        </small>
       </div>
 
-      <!-- Location Picker — dropdown from preset list -->
+      <!-- Location Picker -->
       <div class="form-group">
         <label>📍 Pickup Location *</label>
         <select name="location" id="locationSelect" required onchange="updateLatLng(this)">
@@ -59,54 +120,67 @@
         </small>
       </div>
 
-      <!-- Hidden lat/lng — auto-filled from dropdown selection -->
+      <!-- Hidden lat/lng -->
       <input type="hidden" name="latitude"  id="latInput"  value="17.3850"/>
       <input type="hidden" name="longitude" id="lngInput"  value="78.4867"/>
 
-      <!-- Selected location preview -->
-      <div id="locationPreview" style="display:none;background:var(--green-lt);border-radius:8px;
-           padding:10px 14px;margin-bottom:16px;font-size:.85rem;color:var(--green);border-left:4px solid var(--green);">
+      <!-- Location preview -->
+      <div id="locationPreview"
+           style="display:none;background:var(--green-lt);border-radius:8px;
+                  padding:10px 14px;margin-bottom:16px;font-size:.85rem;
+                  color:var(--green);border-left:4px solid var(--green);">
         📍 <span id="previewText"></span>
-      </div>
-
-      <div class="form-group">
-        <label>⚠️ Allergens (optional)</label>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
-          {% for allergen in ['Gluten','Dairy','Nuts','Eggs','Soy','Seafood'] %}
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;
-                        font-weight:500;font-size:.88rem;">
-            <input type="checkbox" name="allergen_{{ allergen.lower() }}" value="{{ allergen }}"
-                   style="width:auto;"/>
-            {{ allergen }}
-          </label>
-          {% endfor %}
-        </div>
       </div>
 
       <div class="form-group">
         <label>📸 Photo (optional)</label>
         <input type="file" name="photo" accept="image/*"
                style="padding:8px;border:1.5px dashed var(--border);background:var(--surface2);"/>
-        <small style="color:var(--text3);font-size:.8rem;">Upload a photo to attract more claims (max 5MB)</small>
+        <small style="color:var(--text3);font-size:.8rem;">
+          Upload a photo to attract more claims (max 5MB)
+        </small>
       </div>
 
       <div class="form-group">
         <label>📝 Description (optional)</label>
         <textarea name="description" rows="3"
-                  placeholder="Any details about the food — freshness, how it was stored, special instructions..."></textarea>
+                  placeholder="Any details about the food — freshness, how it was stored, special instructions…"></textarea>
       </div>
 
       <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px;">
         <a href="{{ url_for('foodbank.index') }}" class="btn-secondary">Cancel</a>
         <button type="submit" class="btn-primary">🎁 List Food for Donation</button>
       </div>
+
     </div>
   </form>
 </div>
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
+flatpickr('#expiryPicker', {
+  enableTime:      true,
+  dateFormat:      'Y-m-dTH:i',       // sent to Flask — matches strptime('%Y-%m-%dT%H:%M')
+  altInput:        true,
+  altFormat:       'D, d M Y  h:i K', // shown to user e.g. "Fri, 07 Mar 2026  02:30 PM"
+  minDate:         'today',
+  minuteIncrement: 15,
+  time_24hr:       false,
+  disableMobile:   false,
+  onReady: function(_, __, fp) {
+    fp.altInput.style.cssText =
+      'background:var(--input-bg);color:var(--text);border:1.5px solid var(--border);' +
+      'border-radius:8px;padding:10px 42px 10px 14px;width:100%;font-size:.95rem;cursor:pointer;';
+    fp.altInput.readOnly = true;
+  },
+  onChange: function(_, __, fp) {
+    fp.altInput.style.borderColor = 'var(--green)';
+    fp.altInput.style.boxShadow   = '0 0 0 3px rgba(27,107,47,.12)';
+  }
+});
+
 function updateLatLng(select) {
   var opt = select.options[select.selectedIndex];
   var lat = opt.dataset.lat;
@@ -115,7 +189,8 @@ function updateLatLng(select) {
     document.getElementById('latInput').value  = lat;
     document.getElementById('lngInput').value  = lng;
     document.getElementById('previewText').textContent =
-      opt.value + ' (Lat: ' + parseFloat(lat).toFixed(4) + ', Lng: ' + parseFloat(lng).toFixed(4) + ')';
+      opt.value + ' (Lat: ' + parseFloat(lat).toFixed(4) +
+      ', Lng: ' + parseFloat(lng).toFixed(4) + ')';
     document.getElementById('locationPreview').style.display = 'block';
   } else {
     document.getElementById('locationPreview').style.display = 'none';

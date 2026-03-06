@@ -34,13 +34,13 @@ class FoodListing(db.Model):
     longitude    = db.Column(db.Float, default=78.4867)
     photo_url    = db.Column(db.String(300))
     description  = db.Column(db.Text)
-    status       = db.Column(db.String(20), default='available')  # available/claimed/picked_up/expired
+    status       = db.Column(db.String(20), default='available')
     claimed_by   = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     claimed_at   = db.Column(db.DateTime)
     picked_up_at = db.Column(db.DateTime)
     posted_at    = db.Column(db.DateTime, default=datetime.utcnow)
-    donor_rating = db.Column(db.Float)        # avg rating from recipients
-    allergens    = db.Column(db.String(200))  # comma-separated
+    donor_rating = db.Column(db.Float)
+    allergens    = db.Column(db.String(200))
 
     @property
     def is_expired(self):
@@ -69,22 +69,20 @@ class ProgressLog(db.Model):
     created_at        = db.Column(db.DateTime, default=datetime.utcnow)
 
 class CustomWorkout(db.Model):
-    """User-built custom workout routines"""
     __tablename__ = 'custom_workouts'
     id          = db.Column(db.Integer, primary_key=True)
     user_id     = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     name        = db.Column(db.String(100), nullable=False)
-    exercises   = db.Column(db.Text)   # JSON list of exercises
+    exercises   = db.Column(db.Text)
     created_at  = db.Column(db.DateTime, default=datetime.utcnow)
 
 class DonorRating(db.Model):
-    """Recipient ratings for donors"""
     __tablename__ = 'donor_ratings'
     id          = db.Column(db.Integer, primary_key=True)
     listing_id  = db.Column(db.Integer, db.ForeignKey('food_listings.id'))
     donor_id    = db.Column(db.Integer, db.ForeignKey('users.id'))
     rater_id    = db.Column(db.Integer, db.ForeignKey('users.id'))
-    rating      = db.Column(db.Integer)   # 1-5
+    rating      = db.Column(db.Integer)
     comment     = db.Column(db.String(300))
     created_at  = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -94,3 +92,50 @@ class Badge(db.Model):
     user_id    = db.Column(db.Integer, db.ForeignKey('users.id'))
     badge_key  = db.Column(db.String(50))
     earned_at  = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+# ── NEW: Notifications ────────────────────────────────────────────────────────
+class Notification(db.Model):
+    __tablename__ = 'notifications'
+    id           = db.Column(db.Integer, primary_key=True)
+    user_id      = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # recipient
+    type         = db.Column(db.String(50))   # 'new_donation' | 'message' | 'claim' | 'pickup'
+    title        = db.Column(db.String(200))
+    body         = db.Column(db.String(500))
+    link         = db.Column(db.String(300))  # URL to navigate to
+    is_read      = db.Column(db.Boolean, default=False)
+    created_at   = db.Column(db.DateTime, default=datetime.utcnow)
+
+    @property
+    def time_ago(self):
+        delta = datetime.utcnow() - self.created_at
+        s = int(delta.total_seconds())
+        if s < 60:    return 'just now'
+        if s < 3600:  return f'{s//60}m ago'
+        if s < 86400: return f'{s//3600}h ago'
+        return f'{s//86400}d ago'
+
+
+# ── NEW: Messages ─────────────────────────────────────────────────────────────
+class Message(db.Model):
+    __tablename__ = 'messages'
+    id           = db.Column(db.Integer, primary_key=True)
+    sender_id    = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    receiver_id  = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    listing_id   = db.Column(db.Integer, db.ForeignKey('food_listings.id'), nullable=True)
+    body         = db.Column(db.Text, nullable=False)
+    is_read      = db.Column(db.Boolean, default=False)
+    created_at   = db.Column(db.DateTime, default=datetime.utcnow)
+
+    sender   = db.relationship('User', foreign_keys=[sender_id],   backref='sent_messages')
+    receiver = db.relationship('User', foreign_keys=[receiver_id], backref='received_messages')
+    listing  = db.relationship('FoodListing', foreign_keys=[listing_id])
+
+    @property
+    def time_ago(self):
+        delta = datetime.utcnow() - self.created_at
+        s = int(delta.total_seconds())
+        if s < 60:    return 'just now'
+        if s < 3600:  return f'{s//60}m ago'
+        if s < 86400: return f'{s//3600}h ago'
+        return f'{s//86400}d ago'

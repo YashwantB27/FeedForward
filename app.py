@@ -35,7 +35,7 @@ def create_app():
 
     @login_manager.user_loader
     def load_user(user_id):
-        return User.query.get(int(user_id))
+        return db.session.get(User, int(user_id))
 
     # Inject translations + lang into every template automatically
     @app.context_processor
@@ -60,6 +60,8 @@ def create_app():
     from routes.progress_admin import progress, admin
     from routes.lang           import lang as lang_bp
     from routes.chatbot        import chatbot
+    from routes.streak import streak_bp
+    from routes.inbox import inbox
 
     app.register_blueprint(auth)
     app.register_blueprint(main)
@@ -70,6 +72,8 @@ def create_app():
     app.register_blueprint(admin)
     app.register_blueprint(lang_bp)
     app.register_blueprint(chatbot)
+    app.register_blueprint(streak_bp)
+    app.register_blueprint(inbox)
 
     # Create all DB tables
     with app.app_context():

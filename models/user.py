@@ -24,6 +24,7 @@ class User(db.Model, UserMixin):
     latitude      = db.Column(db.Float)
     longitude     = db.Column(db.Float)
     profile_complete = db.Column(db.Boolean, default=False)
+    allergies     = db.Column(db.String(200), default='')  # comma-separated e.g. "gluten,dairy,nuts"
     created_at    = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationships

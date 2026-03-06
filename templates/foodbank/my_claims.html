@@ -1,21 +1,84 @@
-{% extends 'base.html' %}{% block title %}My Claims{% endblock %}
+{% extends 'base.html' %}
+{% block title %}My Claims{% endblock %}
 {% block content %}
-<h1 style="font-size:2rem;font-weight:800;color:#1B6B2F;margin-bottom:24px;">🙌 My Food Claims</h1>
-{% for c in claims %}
-<div class="card" style="margin-bottom:12px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-  <div style="font-size:2rem;">🍱</div>
-  <div style="flex:1;">
-    <div style="font-weight:700;">{{ c.food_name }}</div>
-    <div style="color:#757575;font-size:.85rem;">{{ c.quantity }} • {{ c.location }}</div>
-    <div style="color:#757575;font-size:.8rem;">Claimed: {{ c.claimed_at.strftime('%d %b %Y %I:%M %p') if c.claimed_at else 'N/A' }}</div>
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+  <h1 style="font-size:2rem;font-weight:800;color:var(--green);">🙌 My Claims</h1>
+  <a href="{{ url_for('foodbank.index') }}" class="btn-secondary">Browse Food</a>
+</div>
+
+{% set total_claims   = listings | length %}
+{% set total_pickedup = listings | selectattr('status','equalto','picked_up') | list | length %}
+
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;margin-bottom:24px;">
+  {% for icon,val,label,color in [
+    ('🙌', total_claims,   'Total Claims',  'var(--green)'),
+    ('✅', total_pickedup, 'Picked Up',     'var(--blue)'),
+    ('🍽️', total_pickedup, 'Meals Received','var(--amber)'),
+  ] %}
+  <div class="card" style="text-align:center;border-top:4px solid {{ color }};">
+    <div style="font-size:1.5rem;">{{ icon }}</div>
+    <div style="font-size:2rem;font-weight:800;color:{{ color }};">{{ val }}</div>
+    <div style="color:var(--text2);font-size:.85rem;">{{ label }}</div>
   </div>
-  <span class="badge-yellow">Claimed ✅</span>
+  {% endfor %}
 </div>
+
+{% if listings %}
+  {% for item in listings %}
+  <div class="card" style="margin-bottom:12px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+    <div style="font-size:2rem;">🍱</div>
+    <div style="flex:1;">
+      <div style="font-weight:700;">{{ item.food_name }}</div>
+      <div style="color:var(--text2);font-size:.85rem;">
+        {{ item.quantity }} • {{ item.location }}
+      </div>
+      {% if item.claimed_at %}
+      <div style="color:var(--text3);font-size:.8rem;">
+        🕐 Claimed: {{ item.claimed_at.strftime('%d %b %Y, %I:%M %p') }}
+      </div>
+      {% endif %}
+    </div>
+
+    <span class="badge-{{ 'green' if item.status=='available' else 'yellow' if item.status=='claimed' else 'blue' if item.status=='picked_up' else 'red' }}">
+      {{ item.status.replace('_',' ').title() }}
+    </span>
+
+    <!-- Message donor -->
+    <a href="{{ url_for('inbox.conversation', partner_id=item.donor_id, listing_id=item.id) }}"
+       style="font-size:.85rem;color:var(--blue);font-weight:600;white-space:nowrap;">
+      💬 Message Donor
+    </a>
+
+    <!-- Confirm pickup -->
+    {% if item.status == 'claimed' %}
+    <a href="{{ url_for('foodbank.mark_pickup', listing_id=item.id) }}"
+       class="btn-primary"
+       style="font-size:.82rem;padding:7px 14px;white-space:nowrap;">
+      ✅ Confirm Pickup
+    </a>
+    {% endif %}
+
+    <!-- Rate donor -->
+    {% if item.status == 'picked_up' %}
+    <a href="{{ url_for('foodbank.rate_donor', listing_id=item.id) }}"
+       class="btn-secondary"
+       style="font-size:.82rem;padding:7px 14px;white-space:nowrap;">
+      ⭐ Rate Donor
+    </a>
+    {% endif %}
+  </div>
+  {% endfor %}
+
 {% else %}
-<div style="text-align:center;padding:60px;background:#fff;border-radius:16px;">
+<div style="text-align:center;padding:60px;background:var(--surface);border-radius:16px;">
   <div style="font-size:3rem;">🙌</div>
-  <h2 style="color:#1B6B2F;">No claims yet</h2>
-  <a href="{{ url_for('foodbank.index') }}" class="btn-primary" style="margin-top:16px;">Browse Available Food</a>
+  <h2 style="color:var(--green);">No claims yet</h2>
+  <p style="color:var(--text2);">Browse available food and claim what you need.</p>
+  <a href="{{ url_for('foodbank.index') }}" class="btn-primary" style="margin-top:16px;">
+    Browse Food Now
+  </a>
 </div>
-{% endfor %}
+{% endif %}
+
 {% endblock %}

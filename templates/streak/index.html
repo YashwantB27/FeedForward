@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% block title %}Workout Streak — FeedForward{% endblock %}
+
+{% block head %}
+<style>
+.streak-ring {
+  width:140px;height:140px;border-radius:50%;
+  background:conic-gradient(var(--green) 0%,var(--green-lt) 0%);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;margin:0 auto 16px;
+  box-shadow:0 0 0 6px var(--green-lt);
+}
+.streak-inner {
+  width:110px;height:110px;background:var(--surface);border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.upload-zone {
+  border:2.5px dashed var(--border);border-radius:16px;padding:36px 24px;
+  text-align:center;cursor:pointer;transition:all .2s;background:var(--surface2);
+}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--green);background:var(--green-lt);}
+.week-dot{width:18px;height:18px;border-radius:50%;display:inline-block;margin:3px;}
+.verdict-approved {border-left:4px solid var(--green);background:var(--green-lt);}
+.verdict-rejected {border-left:4px solid var(--red);background:var(--red-lt);}
+.verdict-duplicate{border-left:4px solid var(--yellow);background:var(--yellow-lt);}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:28px;">
+  <div>
+    <h1 style="font-size:2rem;font-weight:800;color:var(--green);margin:0;">🔥 Workout Streak</h1>
+    <p style="color:var(--text2);margin:4px 0 0;">Upload a weekly workout photo · AI verifies your progress</p>
+  </div>
+  <div style="font-size:.82rem;color:var(--text2);">Week {{ week }}, {{ year }}</div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
+
+  <!-- Streak Ring -->
+  <div class="card" style="text-align:center;padding:36px 24px;">
+    <div class="streak-ring" id="streakRing">
+      <div class="streak-inner">
+        <div style="font-size:2.4rem;font-weight:900;color:var(--green);line-height:1;">{{ current_streak }}</div>
+        <div style="font-size:.75rem;font-weight:700;color:var(--text2);">WEEKS</div>
+      </div>
+    </div>
+    <h2 style="font-weight:800;margin-bottom:6px;">
+      {% if current_streak == 0 %}Start Your Streak! 💪
+      {% elif current_streak < 4 %}Building Momentum 🌱
+      {% elif current_streak < 8 %}On Fire! 🔥
+      {% elif current_streak < 12 %}Unstoppable! ⚡
+      {% else %}Legend Status! 🏆{% endif %}
+    </h2>
+    <p style="color:var(--text2);font-size:.9rem;margin-bottom:20px;">
+      {% if current_streak == 0 %}Upload your first photo to begin
+      {% else %}{{ current_streak }} consecutive week{{ 's' if current_streak != 1 }} verified by AI{% endif %}
+    </p>
+    <div style="margin-bottom:12px;">
+      {% for entry in history[::-1] %}
+      <span class="week-dot" title="Week {{ entry.week_number }}: {{ entry.ai_verdict }}"
+            style="background:{% if entry.ai_verdict=='approved' %}var(--green){% elif entry.ai_verdict=='duplicate' %}var(--yellow){% elif entry.ai_verdict=='rejected' %}var(--red){% else %}var(--border){% endif %};"></span>
+      {% endfor %}
+      {% for i in range([12 - history|length, 0]|max) %}
+      <span class="week-dot" style="background:var(--border);opacity:.4;"></span>
+      {% endfor %}
+    </div>
+    <div style="font-size:.76rem;color:var(--text3);">🟢 Approved &nbsp; 🟡 Duplicate &nbsp; 🔴 Rejected</div>
+  </div>
+
+  <!-- Upload / This week -->
+  <div class="card" style="padding:28px;">
+    {% if this_week %}
+      <h3 style="font-weight:700;margin-bottom:16px;color:var(--green);">📸 This Week's Submission</h3>
+      <div class="verdict-{{ this_week.ai_verdict }}" style="border-radius:10px;padding:14px;margin-bottom:16px;">
+        <div style="font-weight:700;font-size:1rem;margin-bottom:4px;">
+          {% if this_week.ai_verdict=='approved' %}✅ Streak Approved!
+          {% elif this_week.ai_verdict=='duplicate' %}⚠️ Duplicate Detected
+          {% else %}❌ Not Approved{% endif %}
+        </div>
+        <p style="font-size:.88rem;margin:0;">{{ this_week.ai_feedback }}</p>
+        {% if this_week.ai_score %}
+        <div style="margin-top:8px;font-size:.82rem;font-weight:600;">AI Score: <strong>{{ this_week.ai_score|int }}/100</strong></div>
+        {% endif %}
+      </div>
+      {% if this_week.photo_path %}
+      <img src="/{{ this_week.photo_path }}" style="width:100%;border-radius:10px;max-height:200px;object-fit:cover;">
+      {% endif %}
+      <div style="margin-top:14px;padding:12px;background:var(--surface2);border-radius:8px;font-size:.84rem;color:var(--text2);text-align:center;">
+        📅 Next submission opens <strong>next week</strong>
+      </div>
+    {% else %}
+      <h3 style="font-weight:700;margin-bottom:8px;">📤 Upload This Week's Photo</h3>
+      <p style="color:var(--text2);font-size:.88rem;margin-bottom:16px;">
+        Upload a clear photo of yourself working out or showing fitness progress.<br>
+        <strong>AI will verify</strong> it's genuine and different from last week.
+      </p>
+      <form method="POST" action="{{ url_for('streak.upload') }}" enctype="multipart/form-data" id="streakForm">
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('photoInput').click();">
+          <div id="preview" style="display:none;">
+            <img id="previewImg" style="max-height:180px;border-radius:8px;margin-bottom:10px;">
+          </div>
+          <div id="uploadPrompt">
+            <div style="font-size:3rem;margin-bottom:10px;">📸</div>
+            <div style="font-weight:700;font-size:1rem;margin-bottom:6px;">Click to upload photo</div>
+            <div style="color:var(--text2);font-size:.84rem;">or drag & drop</div>
+            <div style="color:var(--text3);font-size:.78rem;margin-top:8px;">JPG, PNG, WebP · max 8MB</div>
+          </div>
+          <input type="file" id="photoInput" name="photo" accept="image/jpeg,image/png,image/webp"
+                 style="display:none;" onchange="previewPhoto(this)">
+        </div>
+        <div id="submitRow" style="display:none;margin-top:16px;">
+          <button type="submit" class="btn-primary" style="width:100%;justify-content:center;font-size:1rem;" id="submitBtn">
+            🤖 Verify with AI & Submit
+          </button>
+          <p style="font-size:.78rem;color:var(--text2);text-align:center;margin-top:8px;">Claude AI analyzes your photo</p>
+        </div>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+<!-- How it works -->
+<div class="card" style="margin-bottom:24px;">
+  <h3 style="font-weight:700;margin-bottom:14px;">📋 How It Works</h3>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
+    {% for icon,title,desc in [
+      ('📸','Upload Weekly','One workout photo per week, every 7 days'),
+      ('🤖','AI Analysis','Claude checks it\'s a genuine fitness photo'),
+      ('🔍','Duplicate Check','pHash + vision detects re-uploaded photos'),
+      ('🔥','Earn Streaks','Verified week = +1 streak. Duplicate = reset to 0'),
+    ] %}
+    <div style="background:var(--surface2);border-radius:10px;padding:14px;border:1px solid var(--border);">
+      <div style="font-size:1.5rem;margin-bottom:6px;">{{ icon }}</div>
+      <div style="font-weight:700;font-size:.9rem;margin-bottom:4px;">{{ title }}</div>
+      <div style="font-size:.8rem;color:var(--text2);">{{ desc }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- History -->
+{% if history %}
+<div class="card">
+  <h3 class="section-title">📅 Submission History</h3>
+  <div style="display:flex;flex-direction:column;gap:10px;">
+    {% for entry in history %}
+    <div style="display:flex;align-items:center;gap:14px;padding:12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);">
+      {% if entry.photo_path %}
+      <img src="/{{ entry.photo_path }}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0;">
+      {% else %}
+      <div style="width:52px;height:52px;background:var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;">📸</div>
+      {% endif %}
+      <div style="flex:1;">
+        <div style="font-weight:700;font-size:.9rem;">Week {{ entry.week_number }}, {{ entry.year }}</div>
+        <div style="font-size:.82rem;color:var(--text2);">{{ (entry.ai_feedback or '')[:80] }}{% if entry.ai_feedback and entry.ai_feedback|length > 80 %}…{% endif %}</div>
+        {% if entry.ai_score %}<div style="font-size:.76rem;color:var(--text3);">AI Score: {{ entry.ai_score|int }}/100</div>{% endif %}
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <span class="badge-{% if entry.ai_verdict=='approved' %}green{% elif entry.ai_verdict=='duplicate' %}yellow{% else %}red{% endif %}">
+          {% if entry.ai_verdict=='approved' %}✅ +1 Week
+          {% elif entry.ai_verdict=='duplicate' %}⚠️ Duplicate
+          {% else %}❌ Rejected{% endif %}
+        </span>
+        {% if entry.streak_count > 0 %}
+        <div style="font-size:.76rem;color:var(--green);font-weight:700;margin-top:4px;">🔥 {{ entry.streak_count }} streak</div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const zone = document.getElementById('uploadZone');
+if (zone) {
+  zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', ()  => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) { document.getElementById('photoInput').files = e.dataTransfer.files; previewPhoto({files:[file]}); }
+  });
+}
+function previewPhoto(input) {
+  const file = input.files ? input.files[0] : input;
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('previewImg').src = e.target.result;
+    document.getElementById('preview').style.display = 'block';
+    document.getElementById('uploadPrompt').style.display = 'none';
+    document.getElementById('submitRow').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+document.getElementById('streakForm')?.addEventListener('submit', () => {
+  const btn = document.getElementById('submitBtn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ AI is analyzing…'; }
+});
+const streak = {{ current_streak }};
+const ring   = document.getElementById('streakRing');
+if (ring && streak > 0) {
+  const pct = Math.min(streak / 12, 1) * 100;
+  ring.style.background = `conic-gradient(var(--green) ${pct}%, var(--green-lt) ${pct}%)`;
+}
+</script>
+{% endblock %}

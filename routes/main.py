@@ -85,6 +85,13 @@ def setup_profile():
         current_user.days_per_week = int(request.form.get('days_per_week', 4))
         current_user.location      = request.form.get('location', 'Hyderabad')
         current_user.profile_complete = True
+
+        # ── Save allergies from profile form ──────────────────────────────────
+        ALLERGY_OPTIONS = ['gluten', 'dairy', 'nuts', 'egg', 'soy', 'seafood']
+        selected_allergies = [a for a in ALLERGY_OPTIONS if request.form.get(f'allergy_{a}')]
+        current_user.allergies = ','.join(selected_allergies)  # e.g. "gluten,dairy"
+        # ─────────────────────────────────────────────────────────────────────
+
         db.session.commit()
 
         from engines.diet_engine import generate_meal_plan

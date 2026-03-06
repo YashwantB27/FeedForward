@@ -9,149 +9,93 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
-    /* ── LIGHT THEME ──────────────────────────────────────────────────── */
     :root {
-      --bg:         #FAFAF8; --bg2:        #F2F4F0;
-      --surface:    #FFFFFF; --surface2:   #F7F8F5;
-      --border:     #E0E0DC; --text:       #1A1A1A;
-      --text2:      #5C5C5C; --text3:      #9E9E9E;
-      --green:      #1B6B2F; --green-dk:   #0D4A1F;
-      --green-lt:   #E8F5E9; --green-mid:  #C8E6C9;
-      --amber:      #FF8F00; --blue:       #1565C0;
-      --blue-lt:    #E3F2FD; --red:        #C62828;
-      --red-lt:     #FFEBEE; --yellow-lt:  #FFF9C4;
-      --shadow:     rgba(0,0,0,.07); --shadow-hov: rgba(0,0,0,.13);
-      --nav-bg:     #FFFFFF; --nav-border: #E8F5E9;
-      --input-bg:   #FFFFFF; --toggle-bg:  #E8F5E9;
+      --bg:#FAFAF8;--bg2:#F2F4F0;--surface:#FFFFFF;--surface2:#F7F8F5;
+      --border:#E0E0DC;--text:#1A1A1A;--text2:#5C5C5C;--text3:#9E9E9E;
+      --green:#1B6B2F;--green-dk:#0D4A1F;--green-lt:#E8F5E9;--green-mid:#C8E6C9;
+      --amber:#FF8F00;--blue:#1565C0;--blue-lt:#E3F2FD;--red:#C62828;
+      --red-lt:#FFEBEE;--yellow-lt:#FFF9C4;
+      --shadow:rgba(0,0,0,.07);--shadow-hov:rgba(0,0,0,.13);
+      --nav-bg:#FFFFFF;--nav-border:#E8F5E9;--input-bg:#FFFFFF;--toggle-bg:#E8F5E9;
     }
-    /* ── DARK THEME ───────────────────────────────────────────────────── */
     [data-theme="dark"] {
-      --bg:         #0E1810; --bg2:        #141F16;
-      --surface:    #192B1C; --surface2:   #1F3323;
-      --border:     #2C4A31; --text:       #DFF0E3;
-      --text2:      #8FBF99; --text3:      #5C8A66;
-      --green:      #52C97A; --green-dk:   #7DD898;
-      --green-lt:   #162A19; --green-mid:  #1C3521;
-      --amber:      #FFB74D; --blue:       #64B5F6;
-      --blue-lt:    #0D2137; --red:        #EF9A9A;
-      --red-lt:     #2D1212; --yellow-lt:  #2A2200;
-      --shadow:     rgba(0,0,0,.35); --shadow-hov: rgba(0,0,0,.55);
-      --nav-bg:     #192B1C; --nav-border: #2C4A31;
-      --input-bg:   #141F16; --toggle-bg:  #1F3323;
+      --bg:#0E1810;--bg2:#141F16;--surface:#192B1C;--surface2:#1F3323;
+      --border:#2C4A31;--text:#DFF0E3;--text2:#8FBF99;--text3:#5C8A66;
+      --green:#52C97A;--green-dk:#7DD898;--green-lt:#162A19;--green-mid:#1C3521;
+      --amber:#FFB74D;--blue:#64B5F6;--blue-lt:#0D2137;--red:#EF9A9A;
+      --red-lt:#2D1212;--yellow-lt:#2A2200;
+      --shadow:rgba(0,0,0,.35);--shadow-hov:rgba(0,0,0,.55);
+      --nav-bg:#192B1C;--nav-border:#2C4A31;--input-bg:#141F16;--toggle-bg:#1F3323;
     }
-    *, *::before, *::after { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: var(--bg); color: var(--text);
-      margin: 0; line-height: 1.6;
-      transition: background .3s, color .3s;
-    }
-    a { text-decoration: none; }
-    .btn-primary {
-      background: var(--green); color: #fff;
-      padding: 10px 24px; border-radius: 8px; font-weight: 600;
-      display: inline-block; border: none; cursor: pointer;
-      transition: background .2s, transform .15s, box-shadow .2s;
-    }
-    .btn-primary:hover {
-      background: var(--green-dk); transform: translateY(-2px);
-      box-shadow: 0 4px 14px rgba(27,107,47,.35); color: #fff;
-    }
-    .btn-secondary {
-      border: 2px solid var(--green); color: var(--green);
-      padding: 10px 24px; border-radius: 8px; font-weight: 600;
-      display: inline-block; background: transparent; cursor: pointer;
-      transition: background .2s;
-    }
-    .btn-secondary:hover { background: var(--green-lt); }
-    .card {
-      background: var(--surface); border-radius: 14px;
-      box-shadow: 0 2px 10px var(--shadow); padding: 24px;
-      border: 1px solid var(--border); transition: box-shadow .2s;
-    }
-    .card:hover { box-shadow: 0 6px 20px var(--shadow-hov); }
-    .badge-green  { background:var(--green-lt);  color:var(--green);  padding:4px 12px; border-radius:20px; font-size:.8rem; font-weight:600; }
-    .badge-yellow { background:var(--yellow-lt); color:#E65100;       padding:4px 12px; border-radius:20px; font-size:.8rem; font-weight:600; }
-    .badge-red    { background:var(--red-lt);    color:var(--red);    padding:4px 12px; border-radius:20px; font-size:.8rem; font-weight:600; }
-    .badge-blue   { background:var(--blue-lt);   color:var(--blue);   padding:4px 12px; border-radius:20px; font-size:.8rem; font-weight:600; }
-    .nav-link {
-      padding: 7px 12px; border-radius: 8px; color: var(--text);
-      font-weight: 500; font-size: .88rem; white-space: nowrap;
-      transition: background .15s, color .15s;
-    }
-    .nav-link:hover, .nav-link.active { background: var(--green-lt); color: var(--green); }
-    .section-title { font-size: 1.2rem; font-weight: 700; color: var(--green); margin-bottom: 14px; }
-    .alert-success { background:var(--green-lt);  border-left:4px solid var(--green); color:var(--green); padding:12px 16px; border-radius:8px; margin-bottom:14px; }
-    .alert-danger  { background:var(--red-lt);    border-left:4px solid var(--red);   color:var(--red);   padding:12px 16px; border-radius:8px; margin-bottom:14px; }
-    .alert-warning { background:var(--yellow-lt); border-left:4px solid #F57C00;      color:#C65100;      padding:12px 16px; border-radius:8px; margin-bottom:14px; }
-    .alert-info    { background:var(--blue-lt);   border-left:4px solid var(--blue);  color:var(--blue);  padding:12px 16px; border-radius:8px; margin-bottom:14px; }
-    input, select, textarea {
+    *,*::before,*::after{box-sizing:border-box;}
+    html{scroll-behavior:smooth;}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);margin:0;line-height:1.6;transition:background .3s,color .3s;}
+    a{text-decoration:none;}
+    .btn-primary{background:var(--green);color:#fff;padding:10px 24px;border-radius:8px;font-weight:600;display:inline-block;border:none;cursor:pointer;transition:background .2s,transform .15s,box-shadow .2s;}
+    .btn-primary:hover{background:var(--green-dk);transform:translateY(-2px);box-shadow:0 4px 14px rgba(27,107,47,.35);color:#fff;}
+    .btn-secondary{border:2px solid var(--green);color:var(--green);padding:10px 24px;border-radius:8px;font-weight:600;display:inline-block;background:transparent;cursor:pointer;transition:background .2s;}
+    .btn-secondary:hover{background:var(--green-lt);}
+    .card{background:var(--surface);border-radius:14px;box-shadow:0 2px 10px var(--shadow);padding:24px;border:1px solid var(--border);transition:box-shadow .2s;}
+    .card:hover{box-shadow:0 6px 20px var(--shadow-hov);}
+    .badge-green {background:var(--green-lt);color:var(--green);padding:4px 12px;border-radius:20px;font-size:.8rem;font-weight:600;}
+    .badge-yellow{background:var(--yellow-lt);color:#E65100;padding:4px 12px;border-radius:20px;font-size:.8rem;font-weight:600;}
+    .badge-red   {background:var(--red-lt);color:var(--red);padding:4px 12px;border-radius:20px;font-size:.8rem;font-weight:600;}
+    .badge-blue  {background:var(--blue-lt);color:var(--blue);padding:4px 12px;border-radius:20px;font-size:.8rem;font-weight:600;}
+    .nav-link{padding:7px 12px;border-radius:8px;color:var(--text);font-weight:500;font-size:.88rem;white-space:nowrap;transition:background .15s,color .15s;}
+    .nav-link:hover,.nav-link.active{background:var(--green-lt);color:var(--green);}
+    .section-title{font-size:1.2rem;font-weight:700;color:var(--green);margin-bottom:14px;}
+    .alert-success{background:var(--green-lt);border-left:4px solid var(--green);color:var(--green);padding:12px 16px;border-radius:8px;margin-bottom:14px;}
+    .alert-danger {background:var(--red-lt);border-left:4px solid var(--red);color:var(--red);padding:12px 16px;border-radius:8px;margin-bottom:14px;}
+    .alert-warning{background:var(--yellow-lt);border-left:4px solid #F57C00;color:#C65100;padding:12px 16px;border-radius:8px;margin-bottom:14px;}
+    .alert-info   {background:var(--blue-lt);border-left:4px solid var(--blue);color:var(--blue);padding:12px 16px;border-radius:8px;margin-bottom:14px;}
+    input,select,textarea{border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;width:100%;font-size:.95rem;background:var(--input-bg);color:var(--text);transition:border .2s,box-shadow .2s;}
+    input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(27,107,47,.12);}
+    label{display:block;font-weight:600;color:var(--text);margin-bottom:5px;font-size:.9rem;}
+    .form-group{margin-bottom:16px;}
+    table{width:100%;border-collapse:collapse;}
+    th{background:var(--green);color:#fff;padding:10px 12px;text-align:left;font-size:.88rem;}
+    td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:.9rem;color:var(--text);}
+    tr:nth-child(even) td{background:var(--surface2);}
+    #themeToggle{background:var(--toggle-bg);border:1.5px solid var(--border);border-radius:50px;padding:6px 14px;cursor:pointer;font-size:.82rem;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;transition:all .2s;white-space:nowrap;}
+    #themeToggle:hover{border-color:var(--green);color:var(--green);}
+    .lang-wrap{position:relative;}
+    .lang-trigger{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:.82rem;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;transition:border .2s;white-space:nowrap;user-select:none;}
+    .lang-trigger:hover{border-color:var(--green);color:var(--green);}
+    .lang-menu{display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--surface);border:1.5px solid var(--border);border-radius:12px;box-shadow:0 8px 28px var(--shadow);min-width:160px;z-index:9999;overflow:hidden;}
+    .lang-wrap:hover .lang-menu{display:block;}
+    .lang-opt{display:flex;align-items:center;gap:10px;padding:11px 16px;color:var(--text);font-size:.9rem;font-weight:500;transition:background .15s;cursor:pointer;}
+    .lang-opt:hover{background:var(--green-lt);color:var(--green);}
+    .lang-opt.lang-active{background:var(--green-lt);color:var(--green);font-weight:700;}
+    [data-theme="dark"] .leaflet-tile{filter:invert(1) hue-rotate(180deg) brightness(.82);}
+    [data-theme="dark"] .leaflet-container{background:#0E1810;}
+    ::-webkit-scrollbar{width:6px;}
+    ::-webkit-scrollbar-track{background:var(--bg2);}
+    ::-webkit-scrollbar-thumb{background:var(--green);border-radius:3px;}
+    .divider{width:1px;height:28px;background:var(--border);margin:0 4px;}
+    .text-muted{color:var(--text2);}
+
+    /* ── Notification / Message icon buttons ── */
+    .icon-btn {
+      position: relative; background: var(--toggle-bg);
       border: 1.5px solid var(--border); border-radius: 8px;
-      padding: 10px 14px; width: 100%; font-size: .95rem;
-      background: var(--input-bg); color: var(--text);
-      transition: border .2s, box-shadow .2s;
+      width: 36px; height: 36px; display: flex; align-items: center;
+      justify-content: center; cursor: pointer; color: var(--text);
+      font-size: 1rem; transition: all .2s; text-decoration: none;
+      flex-shrink: 0;
     }
-    input:focus, select:focus, textarea:focus {
-      outline: none; border-color: var(--green);
-      box-shadow: 0 0 0 3px rgba(27,107,47,.12);
+    .icon-btn:hover { border-color: var(--green); color: var(--green); background: var(--green-lt); }
+    .icon-badge {
+      position: absolute; top: -5px; right: -5px;
+      background: var(--red); color: #fff;
+      border-radius: 10px; padding: 1px 5px;
+      font-size: .6rem; font-weight: 800; line-height: 1.4;
+      min-width: 16px; text-align: center;
+      display: none;
     }
-    label { display: block; font-weight: 600; color: var(--text); margin-bottom: 5px; font-size: .9rem; }
-    .form-group { margin-bottom: 16px; }
-    table { width: 100%; border-collapse: collapse; }
-    th { background: var(--green); color: #fff; padding: 10px 12px; text-align: left; font-size: .88rem; }
-    td { padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: .9rem; color: var(--text); }
-    tr:nth-child(even) td { background: var(--surface2); }
-
-    /* ── DARK MODE TOGGLE ─────────────────────────────────────────────── */
-    #themeToggle {
-      background: var(--toggle-bg); border: 1.5px solid var(--border);
-      border-radius: 50px; padding: 6px 14px; cursor: pointer;
-      font-size: .82rem; font-weight: 700; color: var(--text);
-      display: flex; align-items: center; gap: 6px;
-      transition: all .2s; white-space: nowrap;
-    }
-    #themeToggle:hover { border-color: var(--green); color: var(--green); }
-
-    /* ── LANGUAGE SWITCHER ────────────────────────────────────────────── */
-    .lang-wrap { position: relative; }
-    .lang-trigger {
-      background: var(--surface); border: 1.5px solid var(--border);
-      border-radius: 8px; padding: 6px 12px; cursor: pointer;
-      font-size: .82rem; font-weight: 700; color: var(--text);
-      display: flex; align-items: center; gap: 6px;
-      transition: border .2s; white-space: nowrap; user-select: none;
-    }
-    .lang-trigger:hover { border-color: var(--green); color: var(--green); }
-    .lang-menu {
-      display: none; position: absolute; right: 0; top: calc(100% + 6px);
-      background: var(--surface); border: 1.5px solid var(--border);
-      border-radius: 12px; box-shadow: 0 8px 28px var(--shadow);
-      min-width: 160px; z-index: 9999; overflow: hidden;
-    }
-    .lang-wrap:hover .lang-menu { display: block; }
-    .lang-opt {
-      display: flex; align-items: center; gap: 10px;
-      padding: 11px 16px; color: var(--text); font-size: .9rem;
-      font-weight: 500; transition: background .15s; cursor: pointer;
-    }
-    .lang-opt:hover       { background: var(--green-lt); color: var(--green); }
-    .lang-opt.lang-active { background: var(--green-lt); color: var(--green); font-weight: 700; }
-
-    /* ── MAP DARK MODE ────────────────────────────────────────────────── */
-    [data-theme="dark"] .leaflet-tile        { filter: invert(1) hue-rotate(180deg) brightness(.82); }
-    [data-theme="dark"] .leaflet-container   { background: #0E1810; }
-
-    ::-webkit-scrollbar       { width: 6px; }
-    ::-webkit-scrollbar-track { background: var(--bg2); }
-    ::-webkit-scrollbar-thumb { background: var(--green); border-radius: 3px; }
-    .divider { width: 1px; height: 28px; background: var(--border); margin: 0 4px; }
-    .text-muted { color: var(--text2); }
   </style>
   {% block head %}{% endblock %}
 </head>
 
-<!-- Apply saved theme BEFORE paint to avoid flash -->
 <script>
   (function(){
     var t = localStorage.getItem('ff_theme') || 'light';
@@ -198,6 +142,10 @@
          class="nav-link {% if 'progress' in (request.endpoint or '') %}active{% endif %}">
         <i class="fas fa-chart-line"></i> {{ t.nav_progress }}
       </a>
+      <a href="{{ url_for('streak.index') }}"
+         class="nav-link {% if 'streak' in (request.endpoint or '') %}active{% endif %}">
+        🔥 Streak
+      </a>
       {% if current_user.role == 'admin' %}
       <a href="{{ url_for('admin.dashboard') }}" class="nav-link">
         <i class="fas fa-cog"></i> {{ t.nav_admin }}
@@ -225,21 +173,29 @@
         </div>
         <div class="lang-menu">
           <a class="lang-opt {% if lang=='en' %}lang-active{% endif %}"
-             href="{{ url_for('lang.set_language', lang_code='en') }}">
-            🇬🇧 English
-          </a>
+             href="{{ url_for('lang.set_language', lang_code='en') }}">🇬🇧 English</a>
           <a class="lang-opt {% if lang=='te' %}lang-active{% endif %}"
-             href="{{ url_for('lang.set_language', lang_code='te') }}">
-            🇮🇳 తెలుగు (Telugu)
-          </a>
+             href="{{ url_for('lang.set_language', lang_code='te') }}">🇮🇳 తెలుగు (Telugu)</a>
           <a class="lang-opt {% if lang=='hi' %}lang-active{% endif %}"
-             href="{{ url_for('lang.set_language', lang_code='hi') }}">
-            🇮🇳 हिंदी (Hindi)
-          </a>
+             href="{{ url_for('lang.set_language', lang_code='hi') }}">🇮🇳 हिंदी (Hindi)</a>
         </div>
       </div>
 
       {% if current_user.is_authenticated %}
+        <div class="divider"></div>
+
+        <!-- 💬 Messages icon -->
+        <a href="{{ url_for('inbox.messages') }}" class="icon-btn" title="Messages">
+          💬
+          <span class="icon-badge" id="msgBadge"></span>
+        </a>
+
+        <!-- 🔔 Notifications icon -->
+        <a href="{{ url_for('inbox.notifications') }}" class="icon-btn" title="Notifications">
+          🔔
+          <span class="icon-badge" id="notifBadge"></span>
+        </a>
+
         <div class="divider"></div>
         <span style="font-weight:600;color:var(--text);font-size:.88rem;">
           👋 {{ current_user.name.split()[0] }}
@@ -279,14 +235,12 @@
 </main>
 
 <!-- ══════════════════════════════ FOOTER ════════════════════════════════════ -->
-<footer style="background:var(--green-dk);color:#fff;padding:40px 24px;
-               margin-top:60px;text-align:center;">
+<footer style="background:var(--green-dk);color:#fff;padding:40px 24px;margin-top:60px;text-align:center;">
   <div style="max-width:1280px;margin:0 auto;">
     <div style="font-size:2rem;margin-bottom:8px;">🌱</div>
     <div style="font-size:1.2rem;font-weight:700;margin-bottom:4px;">FeedForward</div>
     <div style="opacity:.85;margin-bottom:16px;">{{ t.footer_tagline }}</div>
-    <div style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;
-                opacity:.7;font-size:.85rem;margin-bottom:14px;">
+    <div style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;opacity:.7;font-size:.85rem;margin-bottom:14px;">
       <span>🎯 SDG 1</span><span>🌾 SDG 2</span><span>💚 SDG 3</span>
       <span>♻️ SDG 12</span><span>🌍 SDG 13</span><span>🤝 SDG 17</span>
     </div>
@@ -298,34 +252,48 @@
 <script>
   function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
-    var icon  = document.getElementById('themeIcon');
+    var icon = document.getElementById('themeIcon');
     var label = document.getElementById('themeLabel');
     if (!icon) return;
-    if (theme === 'dark') {
-      icon.textContent  = '☀️';
-      label.textContent = 'Light';
-    } else {
-      icon.textContent  = '🌙';
-      label.textContent = 'Dark';
-    }
+    if (theme === 'dark') { icon.textContent='☀️'; label.textContent='Light'; }
+    else                  { icon.textContent='🌙'; label.textContent='Dark';  }
   }
-
   function toggleTheme() {
     var current = document.documentElement.getAttribute('data-theme') || 'light';
-    var next    = current === 'dark' ? 'light' : 'dark';
+    var next = current === 'dark' ? 'light' : 'dark';
     localStorage.setItem('ff_theme', next);
     applyTheme(next);
   }
-
-  // Apply on every page load — reads localStorage so it persists across pages
   applyTheme(localStorage.getItem('ff_theme') || 'light');
 </script>
-<!-- FeedGenie Floating Chatbot -->
-{% if current_user.is_authenticated %}
 
-<!-- Floating Button -->
-<div id="feedgenie-btn"
-     onclick="toggleChat()"
+{% if current_user.is_authenticated %}
+<!-- ── Poll for unread counts every 30s ─────────────────────────────────── -->
+<script>
+function refreshBadges() {
+  fetch('/inbox/notifications/count')
+    .then(r => r.json())
+    .then(data => {
+      var nb = document.getElementById('notifBadge');
+      var mb = document.getElementById('msgBadge');
+      if (nb) {
+        nb.textContent = data.notifications > 9 ? '9+' : data.notifications;
+        nb.style.display = data.notifications > 0 ? 'block' : 'none';
+      }
+      if (mb) {
+        mb.textContent = data.messages > 9 ? '9+' : data.messages;
+        mb.style.display = data.messages > 0 ? 'block' : 'none';
+      }
+    }).catch(() => {});
+}
+refreshBadges();
+setInterval(refreshBadges, 30000);
+</script>
+{% endif %}
+
+<!-- ════════════════════════ FEEDGENIE CHATBOT ═══════════════════════════════ -->
+{% if current_user.is_authenticated %}
+<div id="feedgenie-btn" onclick="toggleChat()"
      style="position:fixed;bottom:28px;right:28px;z-index:9000;
             width:58px;height:58px;background:var(--green);border-radius:50%;
             display:flex;align-items:center;justify-content:center;
@@ -335,22 +303,16 @@
      onmouseout="this.style.transform='scale(1)'"
      title="Chat with FeedGenie">
   🧞
-  <div style="position:absolute;top:-4px;right:-4px;background:#E53935;
-              color:#fff;border-radius:10px;padding:1px 6px;
-              font-size:.62rem;font-weight:800;line-height:1.4;">AI</div>
+  <div style="position:absolute;top:-4px;right:-4px;background:#E53935;color:#fff;
+              border-radius:10px;padding:1px 6px;font-size:.62rem;font-weight:800;line-height:1.4;">AI</div>
 </div>
 
-<!-- Floating Chat Window -->
 <div id="feedgenie-window"
      style="display:none;position:fixed;bottom:96px;right:28px;z-index:8999;
-            width:370px;height:520px;background:var(--surface);
-            border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,.25);
-            border:1.5px solid var(--border);
+            width:370px;height:520px;background:var(--surface);border-radius:18px;
+            box-shadow:0 8px 40px rgba(0,0,0,.25);border:1.5px solid var(--border);
             display:none;flex-direction:column;overflow:hidden;">
-
-  <!-- Header -->
-  <div style="background:var(--green);padding:14px 18px;
-              display:flex;align-items:center;justify-content:space-between;">
+  <div style="background:var(--green);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;">
     <div style="display:flex;align-items:center;gap:10px;">
       <div style="font-size:1.4rem;">🧞</div>
       <div>
@@ -359,200 +321,88 @@
       </div>
     </div>
     <button onclick="toggleChat()"
-            style="background:rgba(255,255,255,.2);border:none;color:#fff;
-                   border-radius:50%;width:30px;height:30px;cursor:pointer;
-                   font-size:1rem;display:flex;align-items:center;justify-content:center;">
-      ✕
-    </button>
+            style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:50%;
+                   width:30px;height:30px;cursor:pointer;font-size:1rem;
+                   display:flex;align-items:center;justify-content:center;">✕</button>
   </div>
-
-  <!-- Messages -->
-  <div id="fg-messages"
-       style="flex:1;overflow-y:auto;padding:16px;
-              display:flex;flex-direction:column;gap:12px;">
-    <!-- Welcome -->
+  <div id="fg-messages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;">
     <div style="display:flex;gap:8px;align-items:flex-start;">
-      <div style="width:28px;height:28px;background:var(--green);border-radius:8px;
-                  display:flex;align-items:center;justify-content:center;
-                  font-size:.9rem;flex-shrink:0;">🧞</div>
-      <div style="background:var(--green-lt);border-radius:0 10px 10px 10px;
-                  padding:10px 13px;font-size:.85rem;line-height:1.5;
-                  color:var(--text);border:1px solid var(--green-mid);max-width:85%;">
+      <div style="width:28px;height:28px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;">🧞</div>
+      <div style="background:var(--green-lt);border-radius:0 10px 10px 10px;padding:10px 13px;font-size:.85rem;line-height:1.5;color:var(--text);border:1px solid var(--green-mid);max-width:85%;">
         <div style="font-weight:700;color:var(--green);font-size:.75rem;margin-bottom:3px;">FeedGenie</div>
         Hey {{ current_user.name.split()[0] }}! 👋 I'm FeedGenie.<br>
         Ask me anything about nutrition, your meal plan, fitness, or FeedForward! 🌱
       </div>
     </div>
   </div>
-
-  <!-- Suggestions -->
-  <div id="fg-suggestions"
-       style="padding:8px 12px;border-top:1px solid var(--border);
-              display:flex;gap:6px;flex-wrap:wrap;">
+  <div id="fg-suggestions" style="padding:8px 12px;border-top:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;">
     {% for q in ['Weight loss tips?','High protein foods?','How much water?','My calorie target?'] %}
-    <button onclick="fgAskSug(this)"
-            style="background:var(--surface2);border:1px solid var(--border);
-                   border-radius:14px;padding:4px 10px;font-size:.74rem;
-                   color:var(--text2);cursor:pointer;">{{ q }}</button>
+    <button onclick="fgAskSug(this)" style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:4px 10px;font-size:.74rem;color:var(--text2);cursor:pointer;">{{ q }}</button>
     {% endfor %}
   </div>
-
-  <!-- Input -->
-  <div style="padding:10px 12px;border-top:1px solid var(--border);
-              display:flex;gap:8px;align-items:flex-end;">
-    <textarea id="fg-input"
-              placeholder="Ask FeedGenie…"
-              rows="1"
+  <div style="padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;">
+    <textarea id="fg-input" placeholder="Ask FeedGenie…" rows="1"
               onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();fgSend();}"
               oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,90)+'px'"
-              style="flex:1;padding:8px 12px;border:1.5px solid var(--border);
-                     border-radius:10px;background:var(--surface);color:var(--text);
-                     font-size:.85rem;resize:none;font-family:inherit;
-                     max-height:90px;line-height:1.4;"></textarea>
+              style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:10px;
+                     background:var(--surface);color:var(--text);font-size:.85rem;resize:none;
+                     font-family:inherit;max-height:90px;line-height:1.4;"></textarea>
     <button onclick="fgSend()" id="fg-send-btn"
-            style="background:var(--green);color:#fff;border:none;
-                   border-radius:10px;padding:8px 14px;cursor:pointer;
-                   font-size:.85rem;font-weight:700;flex-shrink:0;height:38px;">
-      ➤
-    </button>
+            style="background:var(--green);color:#fff;border:none;border-radius:10px;
+                   padding:8px 14px;cursor:pointer;font-size:.85rem;font-weight:700;
+                   flex-shrink:0;height:38px;">➤</button>
   </div>
-
 </div>
 
 <script>
-var fgOpen    = false;
-var fgHistory = [];
-
-function toggleChat() {
-  fgOpen = !fgOpen;
-  var win = document.getElementById('feedgenie-window');
-  win.style.display = fgOpen ? 'flex' : 'none';
-  if (fgOpen) {
-    document.getElementById('fg-input').focus();
-    fgScrollBottom();
-  }
+var fgOpen=false, fgHistory=[];
+function toggleChat(){
+  fgOpen=!fgOpen;
+  var win=document.getElementById('feedgenie-window');
+  win.style.display=fgOpen?'flex':'none';
+  if(fgOpen){document.getElementById('fg-input').focus();fgScrollBottom();}
 }
-
-function fgScrollBottom() {
-  var box = document.getElementById('fg-messages');
-  box.scrollTop = box.scrollHeight;
+function fgScrollBottom(){var b=document.getElementById('fg-messages');b.scrollTop=b.scrollHeight;}
+function fgAddBubble(role,text){
+  var box=document.getElementById('fg-messages'),isBot=role==='assistant';
+  var wrap=document.createElement('div');
+  wrap.style.cssText='display:flex;gap:8px;align-items:flex-start;'+(isBot?'':'flex-direction:row-reverse;');
+  var avatar=document.createElement('div');
+  avatar.style.cssText='width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.85rem;font-weight:700;'+(isBot?'background:var(--green);font-size:.9rem;':'background:var(--blue);color:#fff;');
+  avatar.textContent=isBot?'🧞':'{{ current_user.name[0].upper() }}';
+  var bubble=document.createElement('div');
+  bubble.style.cssText='padding:10px 13px;font-size:.85rem;line-height:1.5;max-width:85%;'+(isBot?'background:var(--green-lt);border-radius:0 10px 10px 10px;border:1px solid var(--green-mid);color:var(--text);':'background:var(--blue);border-radius:10px 0 10px 10px;color:#fff;');
+  if(isBot){var label=document.createElement('div');label.style.cssText='font-weight:700;color:var(--green);font-size:.75rem;margin-bottom:3px;';label.textContent='FeedGenie';bubble.appendChild(label);}
+  var content=document.createElement('div');content.innerHTML=text.replace(/\n/g,'<br>');bubble.appendChild(content);
+  wrap.appendChild(avatar);wrap.appendChild(bubble);box.appendChild(wrap);fgScrollBottom();
 }
-
-function fgAddBubble(role, text) {
-  var box   = document.getElementById('fg-messages');
-  var isBot = role === 'assistant';
-  var wrap  = document.createElement('div');
-  wrap.style.cssText = 'display:flex;gap:8px;align-items:flex-start;' +
-    (isBot ? '' : 'flex-direction:row-reverse;');
-
-  var avatar = document.createElement('div');
-  avatar.style.cssText =
-    'width:28px;height:28px;border-radius:8px;display:flex;align-items:center;' +
-    'justify-content:center;flex-shrink:0;font-size:.85rem;font-weight:700;' +
-    (isBot ? 'background:var(--green);font-size:.9rem;' : 'background:var(--blue);color:#fff;');
-  avatar.textContent = isBot ? '🧞' : '{{ current_user.name[0].upper() }}';
-
-  var bubble = document.createElement('div');
-  bubble.style.cssText =
-    'padding:10px 13px;font-size:.85rem;line-height:1.5;max-width:85%;' +
-    (isBot
-      ? 'background:var(--green-lt);border-radius:0 10px 10px 10px;border:1px solid var(--green-mid);color:var(--text);'
-      : 'background:var(--blue);border-radius:10px 0 10px 10px;color:#fff;');
-
-  if (isBot) {
-    var label = document.createElement('div');
-    label.style.cssText = 'font-weight:700;color:var(--green);font-size:.75rem;margin-bottom:3px;';
-    label.textContent = 'FeedGenie';
-    bubble.appendChild(label);
-  }
-
-  var content = document.createElement('div');
-  content.innerHTML = text.replace(/\n/g, '<br>');
-  bubble.appendChild(content);
-
-  wrap.appendChild(avatar);
-  wrap.appendChild(bubble);
-  box.appendChild(wrap);
-  fgScrollBottom();
+function fgAddTyping(){
+  var box=document.getElementById('fg-messages');var wrap=document.createElement('div');
+  wrap.id='fg-typing';wrap.style.cssText='display:flex;gap:8px;align-items:flex-start;';
+  wrap.innerHTML='<div style="width:28px;height:28px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;">🧞</div><div style="background:var(--green-lt);border-radius:0 10px 10px 10px;padding:10px 14px;border:1px solid var(--green-mid);"><div style="font-weight:700;color:var(--green);font-size:.75rem;margin-bottom:5px;">FeedGenie</div><div style="display:flex;gap:4px;align-items:center;"><span style="width:7px;height:7px;background:var(--green);border-radius:50%;display:inline-block;animation:fg-bounce .8s infinite 0s;"></span><span style="width:7px;height:7px;background:var(--green);border-radius:50%;display:inline-block;animation:fg-bounce .8s infinite .2s;"></span><span style="width:7px;height:7px;background:var(--green);border-radius:50%;display:inline-block;animation:fg-bounce .8s infinite .4s;"></span></div></div>';
+  box.appendChild(wrap);fgScrollBottom();
 }
-
-function fgAddTyping() {
-  var box  = document.getElementById('fg-messages');
-  var wrap = document.createElement('div');
-  wrap.id  = 'fg-typing';
-  wrap.style.cssText = 'display:flex;gap:8px;align-items:flex-start;';
-  wrap.innerHTML =
-    '<div style="width:28px;height:28px;background:var(--green);border-radius:8px;' +
-    'display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;">🧞</div>' +
-    '<div style="background:var(--green-lt);border-radius:0 10px 10px 10px;' +
-    'padding:10px 14px;border:1px solid var(--green-mid);">' +
-    '<div style="font-weight:700;color:var(--green);font-size:.75rem;margin-bottom:5px;">FeedGenie</div>' +
-    '<div style="display:flex;gap:4px;align-items:center;">' +
-    '<span style="width:7px;height:7px;background:var(--green);border-radius:50%;display:inline-block;animation:fg-bounce .8s infinite 0s;"></span>' +
-    '<span style="width:7px;height:7px;background:var(--green);border-radius:50%;display:inline-block;animation:fg-bounce .8s infinite .2s;"></span>' +
-    '<span style="width:7px;height:7px;background:var(--green);border-radius:50%;display:inline-block;animation:fg-bounce .8s infinite .4s;"></span>' +
-    '</div></div>';
-  box.appendChild(wrap);
-  fgScrollBottom();
-}
-
-function fgRemoveTyping() {
-  var el = document.getElementById('fg-typing');
-  if (el) el.remove();
-}
-
-async function fgSend(text) {
-  var input = document.getElementById('fg-input');
-  var msg   = (text || input.value).trim();
-  if (!msg) return;
-
-  document.getElementById('fg-suggestions').style.display = 'none';
-  input.value = '';
-  input.style.height = 'auto';
-  fgAddBubble('user', msg);
-  fgHistory.push({ role: 'user', content: msg });
-
-  var btn = document.getElementById('fg-send-btn');
-  btn.disabled    = true;
-  btn.textContent = '…';
+function fgRemoveTyping(){var el=document.getElementById('fg-typing');if(el)el.remove();}
+async function fgSend(text){
+  var input=document.getElementById('fg-input');var msg=(text||input.value).trim();if(!msg)return;
+  document.getElementById('fg-suggestions').style.display='none';
+  input.value='';input.style.height='auto';
+  fgAddBubble('user',msg);fgHistory.push({role:'user',content:msg});
+  var btn=document.getElementById('fg-send-btn');btn.disabled=true;btn.textContent='…';
   fgAddTyping();
-
-  try {
-    var res  = await fetch('/chatbot/ask', {
-      method:  'POST',
-      headers: {'Content-Type': 'application/json'},
-      body:    JSON.stringify({ messages: fgHistory })
-    });
-    var data = await res.json();
-    fgRemoveTyping();
-    if (data.ok) {
-      fgHistory.push({ role: 'assistant', content: data.reply });
-      fgAddBubble('assistant', data.reply);
-    } else {
-      fgAddBubble('assistant', '⚠️ Something went wrong. Please try again.');
-    }
-  } catch(e) {
-    fgRemoveTyping();
-    fgAddBubble('assistant', '⚠️ Connection error. Please try again.');
-  }
-
-  btn.disabled    = false;
-  btn.textContent = '➤';
-  input.focus();
+  try{
+    var res=await fetch('/chatbot/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:fgHistory})});
+    var data=await res.json();fgRemoveTyping();
+    if(data.ok){fgHistory.push({role:'assistant',content:data.reply});fgAddBubble('assistant',data.reply);}
+    else{fgAddBubble('assistant','⚠️ Something went wrong. Please try again.');}
+  }catch(e){fgRemoveTyping();fgAddBubble('assistant','⚠️ Connection error. Please try again.');}
+  btn.disabled=false;btn.textContent='➤';input.focus();
 }
-
-function fgAskSug(btn) {
-  fgSend(btn.textContent.trim());
-}
+function fgAskSug(btn){fgSend(btn.textContent.trim());}
 </script>
-
 <style>
-@keyframes fg-bounce {
-  0%,80%,100% { transform:translateY(0);   opacity:.4; }
-  40%          { transform:translateY(-5px);opacity:1;  }
-}
+@keyframes fg-bounce{0%,80%,100%{transform:translateY(0);opacity:.4;}40%{transform:translateY(-5px);opacity:1;}}
 </style>
-
 {% endif %}
 
 {% block scripts %}{% endblock %}

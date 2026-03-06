@@ -38,13 +38,38 @@
     <div style="color:var(--text2);font-size:.82rem;margin-bottom:12px;">
       ⏰ Expires: {{ item.expiry_date.strftime('%d %b, %I:%M %p') }}
     </div>
-    {% if item.status == 'available' and item.donor_id != current_user.id %}
-    <a href="{{ url_for('foodbank.claim', listing_id=item.id) }}" class="btn-primary" style="width:100%;text-align:center;font-size:.88rem;">
-      {{ t.fb_claim }}
-    </a>
-    {% elif item.donor_id == current_user.id %}
-    <span class="badge-blue" style="display:inline-block;">{{ t.fb_your_donation }}</span>
+
+    <!-- Action buttons -->
+    {% if item.donor_id == current_user.id %}
+      <!-- Your own listing -->
+      <span class="badge-blue" style="display:inline-block;">{{ t.fb_your_donation }}</span>
+
+    {% else %}
+      <div style="display:flex;flex-direction:column;gap:8px;">
+
+        {% if item.status == 'available' %}
+        <!-- Claim button -->
+        <a href="{{ url_for('foodbank.claim', listing_id=item.id) }}"
+           class="btn-primary"
+           style="width:100%;text-align:center;font-size:.88rem;padding:9px;">
+          {{ t.fb_claim }}
+        </a>
+        {% endif %}
+
+        <!-- Message Donor button — always visible for non-donors -->
+        <a href="{{ url_for('inbox.conversation', partner_id=item.donor_id, listing_id=item.id) }}"
+           style="width:100%;text-align:center;font-size:.88rem;padding:9px;
+                  display:block;border:2px solid var(--blue);color:var(--blue);
+                  border-radius:8px;font-weight:600;background:transparent;
+                  transition:background .2s;"
+           onmouseover="this.style.background='var(--blue-lt)'"
+           onmouseout="this.style.background='transparent'">
+          💬 Message Donor
+        </a>
+
+      </div>
     {% endif %}
+
   </div>
   {% endfor %}
 </div>
@@ -74,7 +99,8 @@ mapData.forEach(function(item) {
   L.marker([item.lat, item.lng], {icon: icon})
    .addTo(map)
    .bindPopup('<strong>' + item.name + '</strong><br>' + item.qty + '<br>' + item.loc +
-              '<br><a href="/foodbank/claim/' + item.id + '" style="color:#1B6B2F;font-weight:700;">Claim →</a>');
+              '<br><a href="/foodbank/claim/' + item.id + '" style="color:#1B6B2F;font-weight:700;">Claim →</a>' +
+              '<br><a href="/inbox/messages/' + item.donor_id + '?listing_id=' + item.id + '" style="color:#1565C0;font-weight:700;">💬 Message Donor</a>');
 });
 </script>
 {% endblock %}

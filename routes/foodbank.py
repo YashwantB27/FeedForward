@@ -7,7 +7,6 @@ import os, math
 
 foodbank = Blueprint('foodbank', __name__, url_prefix='/foodbank')
 
-# Preset location list for Hyderabad (users pick from this)
 HYDERABAD_LOCATIONS = [
     {'name': 'Banjara Hills',    'lat': 17.4156, 'lng': 78.4347},
     {'name': 'Jubilee Hills',    'lat': 17.4326, 'lng': 78.4071},
@@ -42,7 +41,6 @@ HYDERABAD_LOCATIONS = [
 ]
 
 def haversine(lat1, lon1, lat2, lon2):
-    """Distance in km between two coordinates."""
     R = 6371
     dlat = math.radians(lat2 - lat1)
     dlon = math.radians(lon2 - lon1)
@@ -52,7 +50,6 @@ def haversine(lat1, lon1, lat2, lon2):
 @foodbank.route('/')
 @login_required
 def index():
-    # Auto-expire
     for l in FoodListing.query.filter_by(status='available').all():
         if l.is_expired:
             l.status = 'expired'
@@ -71,7 +68,6 @@ def index():
 
     listings = q.all()
 
-    # Distance sort if user has location
     if sort == 'distance' and current_user.lat and current_user.lng:
         listings.sort(key=lambda l: haversine(current_user.lat, current_user.lng,
                                                l.latitude or 17.385, l.longitude or 78.486))
@@ -90,11 +86,9 @@ def index():
 def donate():
     if request.method == 'POST':
         loc_name = request.form.get('location', '').strip()
-        # Look up lat/lng from preset list
         lat = float(request.form.get('latitude') or 17.3850)
         lng = float(request.form.get('longitude') or 78.4867)
 
-        # Match preset location
         preset = next((l for l in HYDERABAD_LOCATIONS if l['name'] == loc_name), None)
         if preset:
             lat, lng = preset['lat'], preset['lng']
@@ -126,10 +120,17 @@ def donate():
             longitude   = lng,
             description = request.form.get('description', '').strip(),
             photo_url   = photo_url,
-            allergens   = request.form.get('allergens', ''),
+            allergens   = '',
             status      = 'available',
         )
         db.session.add(listing)
+        db.session.flush()  # get listing.id before commit
+
+        # ── Notify all recipients about the new donation ──────────────────
+        from routes.inbox import notify_recipients_of_donation
+        notify_recipients_of_donation(listing)
+        # ─────────────────────────────────────────────────────────────────
+
         db.session.commit()
         flash('Food listed successfully! 🎉 Thank you for donating!', 'success')
         return redirect(url_for('foodbank.index'))
@@ -143,9 +144,19 @@ def claim(listing_id):
     if listing.status != 'available':
         flash('This item is no longer available.', 'danger')
         return redirect(url_for('foodbank.index'))
-    listing.status    = 'claimed'
+    listing.status     = 'claimed'
     listing.claimed_by = current_user.id
     listing.claimed_at = datetime.utcnow()
+
+    # Notify the donor that their listing was claimed
+    from routes.inbox import send_notification
+    send_notification(
+        user_id = listing.donor_id,
+        type_   = 'claim',
+        title   = f'🙌 {current_user.name} claimed your donation!',
+        body    = f'Your listing "{listing.food_name}" has been claimed.',
+        link    = url_for('foodbank.my_donations')
+    )
     db.session.commit()
     flash(f'You claimed {listing.food_name}! Contact the donor to arrange pickup. 🙌', 'success')
     return redirect(url_for('foodbank.index'))
@@ -153,11 +164,19 @@ def claim(listing_id):
 @foodbank.route('/pickup/<int:listing_id>')
 @login_required
 def mark_pickup(listing_id):
-    """Mark a claimed listing as picked up."""
     listing = FoodListing.query.get_or_404(listing_id)
     if listing.claimed_by == current_user.id and listing.status == 'claimed':
         listing.status       = 'picked_up'
         listing.picked_up_at = datetime.utcnow()
+
+        from routes.inbox import send_notification
+        send_notification(
+            user_id = listing.donor_id,
+            type_   = 'pickup',
+            title   = f'✅ Pickup confirmed for "{listing.food_name}"',
+            body    = f'{current_user.name} has picked up your donation.',
+            link    = url_for('foodbank.my_donations')
+        )
         db.session.commit()
         flash('Pickup confirmed! Please rate the donor. 🌟', 'success')
         return redirect(url_for('foodbank.rate_donor', listing_id=listing_id))
@@ -174,7 +193,6 @@ def rate_donor(listing_id):
         dr = DonorRating(listing_id=listing_id, donor_id=listing.donor_id,
                          rater_id=current_user.id, rating=rating, comment=comment)
         db.session.add(dr)
-        # Update average rating on listing
         all_ratings = DonorRating.query.filter_by(donor_id=listing.donor_id).all()
         listing.donor_rating = sum(r.rating for r in all_ratings) / len(all_ratings)
         db.session.commit()

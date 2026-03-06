@@ -237,7 +237,48 @@ MEALS = {
     }
 }
 
-# ── Harris-Benedict BMR ────────────────────────────────────────────────────────
+# ── Allergen keyword map ──────────────────────────────────────────────────────
+ALLERGEN_MAP = {
+    'gluten':  ['wheat', 'bread', 'pasta', 'roti', 'oats', 'semolina', 'maida',
+                'toast', 'paratha', 'upma', 'rava', 'daliya', 'biscuit', 'sandwich',
+                'bhature', 'dosa', 'idli', 'poha', 'chapati'],
+    'dairy':   ['milk', 'paneer', 'curd', 'cheese', 'butter', 'ghee', 'yogurt',
+                'cream', 'raita', 'lassi', 'buttermilk', 'makhani', 'greek yogurt'],
+    'nuts':    ['almond', 'peanut', 'cashew', 'walnut', 'pistachio', 'nut',
+                'peanut butter'],
+    'egg':     ['egg'],
+    'soy':     ['tofu', 'soya', 'soy'],
+    'seafood': ['fish', 'prawn', 'shrimp', 'tuna', 'salmon'],
+}
+
+def meal_has_allergen(meal_name: str, user_allergies: list) -> bool:
+    """Return True if the meal name contains any ingredient the user is allergic to."""
+    if not user_allergies:
+        return False
+    name_lower = meal_name.lower()
+    for allergen in user_allergies:
+        keywords = ALLERGEN_MAP.get(allergen, [])
+        if any(kw in name_lower for kw in keywords):
+            return True
+    return False
+
+def filter_meals(meal_list: list, user_allergies: list) -> list:
+    """
+    Remove meals that contain the user's allergens.
+    Falls back to the full list if filtering removes everything
+    (so the plan never crashes).
+    """
+    if not user_allergies:
+        return meal_list
+    safe = [m for m in meal_list if not meal_has_allergen(m['name'], user_allergies)]
+    return safe if safe else meal_list  # graceful fallback
+
+def tag_allergens(meal_name: str) -> list:
+    """Return list of allergen keys present in a meal name (for display)."""
+    name_lower = meal_name.lower()
+    return [a for a, kws in ALLERGEN_MAP.items() if any(k in name_lower for k in kws)]
+
+# ── Harris-Benedict BMR ───────────────────────────────────────────────────────
 def calculate_bmr(age, weight, height, gender='male'):
     if gender == 'female':
         return 447.6 + (9.2 * weight) + (3.1 * height) - (4.3 * age)
@@ -248,31 +289,40 @@ def calculate_daily_calories(bmr, goal):
     return {'lose_weight': tdee - 500, 'gain_muscle': tdee + 300, 'stay_fit': tdee}.get(goal, tdee)
 
 def get_carbon_label(score):
-    if score < 0.5:   return ('🟢 Low', 'success')
-    if score < 1.5:   return ('🟡 Medium', 'warning')
-    return ('🔴 High', 'danger')
+    if score < 0.5:  return ('🟢 Low',    'success')
+    if score < 1.5:  return ('🟡 Medium', 'warning')
+    return                  ('🔴 High',   'danger')
 
-# ── Main plan generator ────────────────────────────────────────────────────────
+# ── Main plan generator ───────────────────────────────────────────────────────
 def generate_meal_plan(user):
-    pref   = user.dietary_pref or 'veg'
-    goal   = user.health_goal  or 'stay_fit'
-    age    = user.age          or 25
-    wt     = user.weight       or 70
-    ht     = user.height       or 170
-    gender = user.gender       or 'male'
+    pref   = getattr(user, 'dietary_pref', None) or 'veg'
+    goal   = getattr(user, 'health_goal',  None) or 'stay_fit'
+    age    = getattr(user, 'age',          None) or 25
+    wt     = getattr(user, 'weight',       None) or 70
+    ht     = getattr(user, 'height',       None) or 170
+    gender = getattr(user, 'gender',       None) or 'male'
 
-    meal_key = 'non_veg' if pref == 'non_veg' else 'veg'
+    # ── Read user allergies from profile ─────────────────────────────────────
+    raw_allergies = getattr(user, 'allergies', '') or ''
+    user_allergies = [a.strip().lower() for a in raw_allergies.split(',') if a.strip()]
 
+    meal_key   = 'non_veg' if pref == 'non_veg' else 'veg'
     bmr        = calculate_bmr(age, wt, ht, gender)
     target_cal = calculate_daily_calories(bmr, goal)
     meals_pool = MEALS.get(meal_key, MEALS['veg']).get(goal, MEALS['veg']['stay_fit'])
 
-    days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+    # ── Filter each slot to remove allergen-containing meals ─────────────────
+    safe_pool = {
+        slot: filter_meals(meals_pool[slot], user_allergies)
+        for slot in ['breakfast', 'lunch', 'dinner', 'snack']
+    }
+
+    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
     plan = []
 
-    # ── Shuffle each slot independently so every regenerate gives a new plan ──
+    # Shuffle safe pool so every regenerate gives a fresh plan
     shuffled = {
-        slot: random.sample(meals_pool[slot], len(meals_pool[slot]))
+        slot: random.sample(safe_pool[slot], len(safe_pool[slot]))
         for slot in ['breakfast', 'lunch', 'dinner', 'snack']
     }
 
@@ -284,14 +334,15 @@ def generate_meal_plan(user):
 
         day_carbon  = breakfast['carbon'] + lunch['carbon'] + dinner['carbon'] + snack['carbon']
         day_cal     = breakfast['cal']    + lunch['cal']    + dinner['cal']    + snack['cal']
-        day_protein = breakfast.get('protein', 0) + lunch.get('protein', 0) + dinner.get('protein', 0)
+        day_protein = (breakfast.get('protein', 0) + lunch.get('protein', 0)
+                       + dinner.get('protein', 0))
 
         plan.append({
             'day':            day,
-            'breakfast':      breakfast,
-            'lunch':          lunch,
-            'dinner':         dinner,
-            'snack':          snack,
+            'breakfast':      {**breakfast, 'allergens': tag_allergens(breakfast['name'])},
+            'lunch':          {**lunch,     'allergens': tag_allergens(lunch['name'])},
+            'dinner':         {**dinner,    'allergens': tag_allergens(dinner['name'])},
+            'snack':          {**snack,     'allergens': tag_allergens(snack['name'])},
             'total_calories': day_cal,
             'total_protein':  day_protein,
             'total_carbon':   round(day_carbon, 2),
@@ -302,13 +353,13 @@ def generate_meal_plan(user):
     total_carbon = round(sum(d['total_carbon'] for d in plan) / 7, 2)
     total_cal    = round(sum(d['total_calories'] for d in plan) / 7, 0)
 
-    # Swap suggestions — pick 3 lowest-carbon meals from lunch + dinner pool
-    all_meals = meals_pool['lunch'] + meals_pool['dinner']
+    # Swap suggestions — 3 lowest-carbon safe meals from lunch + dinner
+    all_meals = safe_pool['lunch'] + safe_pool['dinner']
     all_meals.sort(key=lambda x: x['carbon'])
     swaps = all_meals[:3] if len(all_meals) > 3 else []
 
     return {
-        'plan':              plan,
+        'plan':               plan,
         'avg_daily_calories': total_cal,
         'avg_daily_carbon':   total_carbon,
         'target_calories':    round(target_cal),
@@ -316,4 +367,5 @@ def generate_meal_plan(user):
         'swap_suggestions':   swaps,
         'carbon_label':       get_carbon_label(total_carbon)[0],
         'carbon_class':       get_carbon_label(total_carbon)[1],
+        'user_allergies':     user_allergies,  # pass through for template info banner
     }
