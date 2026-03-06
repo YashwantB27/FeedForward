@@ -1,128 +1,553 @@
 {% extends 'base.html' %}
 {% block title %}FeedForward — Eat Smart. Move Well. Give Back.{% endblock %}
+
+{% block head %}
+<!-- Redesign fonts — can be moved to base.html <head> for global use -->
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  /* ── Page-level overrides (light + dark) ───────────────────────── */
+  body { font-family: 'DM Sans', 'Segoe UI', sans-serif; }
+
+  /* ── Hero ───────────────────────────────────────────────────────── */
+  .ff-hero {
+    position: relative;
+    border-radius: 24px;
+    overflow: hidden;
+    margin-bottom: 56px;
+    background: linear-gradient(135deg, #0D3B1A 0%, #1B6B2F 55%, #2E7D32 100%);
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 480px;
+    gap: 0;
+  }
+  @media(max-width:820px){ .ff-hero{ grid-template-columns:1fr; } .ff-hero-visual{ display:none; } }
+
+  /* Organic blobs */
+  .ff-hero::before {
+    content:'';
+    position:absolute; top:-80px; right:-80px;
+    width:420px; height:420px;
+    border-radius:50%;
+    background: radial-gradient(circle, rgba(255,255,255,.07) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  .ff-hero::after {
+    content:'';
+    position:absolute; bottom:-60px; left:30%;
+    width:300px; height:300px;
+    border-radius:50%;
+    background: radial-gradient(circle, rgba(255,255,255,.05) 0%, transparent 70%);
+    pointer-events:none;
+  }
+
+  .ff-hero-text {
+    padding: 64px 48px;
+    display: flex; flex-direction: column; justify-content: center;
+    position: relative; z-index: 2;
+  }
+
+  .ff-eyebrow {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.2);
+    color: #c5e84a;
+    padding: 5px 14px; border-radius: 20px;
+    font-size: .75rem; letter-spacing: .1em; text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 24px;
+    width: fit-content;
+    animation: ffFadeUp .7s ease both;
+  }
+
+  .ff-hero h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(2.4rem, 4vw, 3.8rem);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -.03em;
+    color: #fff;
+    margin: 0 0 20px;
+    animation: ffFadeUp .7s .08s ease both;
+  }
+  .ff-hero h1 em {
+    font-style: italic;
+    color: #c5e84a;
+    display: block;
+  }
+
+  .ff-hero-sub {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: rgba(255,255,255,.75);
+    max-width: 420px;
+    margin-bottom: 32px;
+    font-weight: 300;
+    animation: ffFadeUp .7s .16s ease both;
+  }
+
+  .ff-hero-btns {
+    display: flex; gap: 12px; flex-wrap: wrap;
+    animation: ffFadeUp .7s .24s ease both;
+  }
+  .ff-btn-white {
+    background: #fff; color: var(--green);
+    padding: 13px 28px; border-radius: 50px;
+    font-weight: 700; font-size: .95rem;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+    transition: all .25s;
+    box-shadow: 0 4px 20px rgba(0,0,0,.15);
+  }
+  .ff-btn-white:hover { background: #c5e84a; color: #0D3B1A; transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,.2); }
+  .ff-btn-outline {
+    border: 2px solid rgba(255,255,255,.45); color: #fff;
+    padding: 12px 28px; border-radius: 50px;
+    font-weight: 600; font-size: .95rem;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+    transition: all .25s;
+  }
+  .ff-btn-outline:hover { border-color: #c5e84a; color: #c5e84a; transform: translateY(-2px); }
+
+  /* Hero right visual panel */
+  .ff-hero-visual {
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 40px 40px 40px 0;
+    gap: 12px;
+    animation: ffFadeUp .7s .32s ease both;
+  }
+
+  .ff-card-glass {
+    background: rgba(255,255,255,.08);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 18px;
+    padding: 20px 22px;
+  }
+  .ff-card-glass-label {
+    font-size: .68rem; letter-spacing: .1em; text-transform: uppercase;
+    color: #c5e84a; margin-bottom: 12px; font-weight: 600;
+  }
+  .ff-meal-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+  .ff-meal-row:last-of-type { border-bottom: none; }
+  .ff-meal-info { display: flex; align-items: center; gap: 10px; }
+  .ff-meal-icon {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: rgba(255,255,255,.1);
+    display: flex; align-items: center; justify-content: center; font-size: 1rem;
+  }
+  .ff-meal-name { font-size: .84rem; color: #fff; font-weight: 500; }
+  .ff-meal-cal  { font-size: .7rem; color: rgba(255,255,255,.5); margin-top: 1px; }
+  .ff-co2-pill {
+    background: rgba(197,232,74,.15);
+    border: 1px solid rgba(197,232,74,.25);
+    color: #c5e84a; font-size: .68rem;
+    padding: 3px 8px; border-radius: 10px; font-weight: 600;
+  }
+  .ff-pbar { height: 4px; background: rgba(255,255,255,.1); border-radius: 2px; margin-top: 12px; overflow:hidden; }
+  .ff-pbar-fill {
+    height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, #4a7c2f, #c5e84a);
+    width: 49%;
+    animation: ffBarGrow 1.8s 1.2s ease both;
+    transform-origin: left;
+  }
+  @keyframes ffBarGrow { from { width: 0; } }
+
+  .ff-mini-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ff-mini-card {
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 14px; padding: 14px 16px;
+  }
+  .ff-mini-icon { font-size: 1.2rem; margin-bottom: 6px; }
+  .ff-mini-lbl  { font-size: .65rem; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: .08em; }
+  .ff-mini-val  { font-family: 'Fraunces', serif; font-size: 1.6rem; color: #c5e84a; font-weight: 700; line-height: 1; }
+  .ff-mini-sub  { font-size: .68rem; color: rgba(255,255,255,.4); }
+
+  /* ── Stats band ─────────────────────────────────────────────────── */
+  .ff-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    margin-bottom: 56px;
+    box-shadow: 0 4px 24px var(--shadow);
+  }
+  @media(max-width:640px){ .ff-stats{ grid-template-columns: repeat(2,1fr); } }
+
+  .ff-stat {
+    background: var(--surface);
+    padding: 28px 20px;
+    text-align: center;
+    border-right: 1px solid var(--border);
+    transition: background .3s;
+  }
+  .ff-stat:last-child { border-right: none; }
+  .ff-stat:hover { background: var(--surface2); }
+  .ff-stat-icon { font-size: 1.5rem; margin-bottom: 8px; }
+  .ff-stat-num {
+    font-family: 'Fraunces', serif;
+    font-size: 2.2rem; font-weight: 900;
+    color: var(--green); line-height: 1; margin-bottom: 4px;
+  }
+  .ff-stat-lbl { font-size: .78rem; color: var(--text2); letter-spacing: .04em; }
+
+  /* ── Section header ─────────────────────────────────────────────── */
+  .ff-section-head { text-align: center; margin-bottom: 36px; }
+  .ff-section-tag {
+    display: inline-block;
+    font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--green); background: var(--green-lt);
+    padding: 4px 14px; border-radius: 20px; font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .ff-section-title {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+    font-weight: 900; letter-spacing: -.025em; line-height: 1.1;
+    color: var(--text);
+  }
+  .ff-section-title em { font-style: italic; color: var(--green); }
+  .ff-section-sub { color: var(--text2); font-size: .95rem; margin-top: 10px; font-weight: 300; }
+
+  /* ── Feature bento grid ─────────────────────────────────────────── */
+  .ff-bento {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 16px;
+    margin-bottom: 56px;
+  }
+  @media(max-width:900px){ .ff-bento{ grid-template-columns: 1fr 1fr; } .ff-bento .ff-bento-lg{ grid-column: span 2; } }
+  @media(max-width:560px){ .ff-bento{ grid-template-columns: 1fr; } .ff-bento .ff-bento-lg{ grid-column: span 1; } }
+
+  .ff-bento-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    transition: all .35s;
+    position: relative; overflow: hidden;
+  }
+  .ff-bento-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 16px 40px var(--shadow-hov);
+    border-color: var(--green-mid);
+  }
+  .ff-bento-card.ff-bento-lg { grid-row: span 2; }
+
+  .ff-bento-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; margin-bottom: 18px;
+  }
+  .ff-ic-green  { background: var(--green-lt); }
+  .ff-ic-blue   { background: var(--blue-lt); }
+  .ff-ic-orange { background: #FFF3E0; }
+  [data-theme="dark"] .ff-ic-orange { background: rgba(255,143,0,.1); }
+
+  .ff-bento-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.2rem; font-weight: 700;
+    letter-spacing: -.01em; margin-bottom: 8px;
+    color: var(--text);
+  }
+  .ff-bento-desc { font-size: .88rem; line-height: 1.7; color: var(--text2); font-weight: 300; }
+  .ff-bento-link {
+    display: inline-flex; align-items: center; gap: 5px;
+    color: var(--green); font-size: .82rem; font-weight: 600;
+    text-decoration: none; margin-top: 18px;
+    letter-spacing: .03em; transition: gap .25s;
+  }
+  .ff-bento-link:hover { gap: 10px; }
+
+  /* Live map dots (food bank card) */
+  .ff-map-visual {
+    margin-top: 20px; background: var(--surface2);
+    border-radius: 12px; padding: 14px;
+    border: 1px solid var(--border);
+  }
+  .ff-map-dots {
+    display: grid; grid-template-columns: repeat(8,1fr); gap: 5px; margin-bottom: 10px;
+  }
+  .ff-dot {
+    aspect-ratio: 1; border-radius: 50%;
+    background: var(--border); transition: background .3s;
+  }
+  .ff-dot.ff-da { background: var(--green); animation: ffPulse 2s infinite; }
+  .ff-dot.ff-dh { background: var(--amber); animation: ffPulse 2s .4s infinite; }
+  @keyframes ffPulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.55;transform:scale(.82);} }
+  .ff-map-legend { display: flex; gap: 12px; font-size: .68rem; color: var(--text3); }
+  .ff-leg-dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:4px; vertical-align:middle; }
+
+  /* ── SDG section ────────────────────────────────────────────────── */
+  .ff-sdg-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 36px 32px;
+    margin-bottom: 56px;
+    text-align: center;
+    box-shadow: 0 2px 10px var(--shadow);
+  }
+  .ff-sdg-grid {
+    display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
+    margin-top: 24px;
+  }
+  .ff-sdg-badge {
+    width: 88px; height: 88px; border-radius: 16px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px; border: 1.5px solid var(--border);
+    transition: all .3s; cursor: default;
+    background: var(--surface2);
+  }
+  .ff-sdg-badge:hover { transform: translateY(-6px) rotate(2deg); border-color: var(--green); box-shadow: 0 8px 24px var(--shadow); }
+  .ff-sdg-badge span { font-size: 1.5rem; }
+  .ff-sdg-badge p { font-size: .58rem; color: var(--green); letter-spacing: .06em; font-weight: 700; margin: 0; text-transform: uppercase; }
+
+  /* ── CTA banner ─────────────────────────────────────────────────── */
+  .ff-cta {
+    border-radius: 24px;
+    background: linear-gradient(135deg, #0D3B1A 0%, var(--green) 100%);
+    padding: 64px 40px;
+    text-align: center;
+    position: relative; overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .ff-cta::before {
+    content:'';
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:600px; height:300px;
+    background: radial-gradient(ellipse, rgba(255,255,255,.07) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  .ff-cta h2 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 900; letter-spacing: -.03em; line-height: 1.1;
+    color: #fff; margin: 0 0 12px; position: relative;
+  }
+  .ff-cta h2 em { font-style: italic; color: #c5e84a; }
+  .ff-cta p { color: rgba(255,255,255,.8); font-size: 1rem; margin-bottom: 28px; font-weight: 300; position: relative; }
+  .ff-cta-btns { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; position: relative; }
+
+  /* ── Scroll reveal ──────────────────────────────────────────────── */
+  .ff-reveal { opacity:0; transform:translateY(28px); transition: opacity .65s ease, transform .65s ease; }
+  .ff-reveal.ff-vis { opacity:1; transform:translateY(0); }
+
+  /* ── Keyframes ──────────────────────────────────────────────────── */
+  @keyframes ffFadeUp {
+    from { opacity:0; transform:translateY(20px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 
-<!-- HERO -->
-<div style="background:linear-gradient(135deg,var(--green-dk) 0%,var(--green) 60%,#2E7D32 100%);
-            border-radius:20px;padding:80px 40px;text-align:center;
-            margin-bottom:48px;position:relative;overflow:hidden;">
-  <div style="position:absolute;top:-20px;right:-20px;font-size:200px;opacity:.04;">🌱</div>
-  <div style="font-size:3rem;margin-bottom:16px;">🌱</div>
-  <h1 style="font-size:2.8rem;font-weight:800;margin-bottom:16px;
-             line-height:1.2;color:#fff;">
-    {{ t.hero_line1 }} {{ t.hero_line2 }} {{ t.hero_line3 }}
-  </h1>
-  <p style="font-size:1.1rem;opacity:.9;max-width:620px;
-            margin:0 auto 32px;color:#fff;">
-    {{ t.hero_sub }}
-  </p>
-  <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
-    <a href="{{ url_for('auth.register') }}"
-       style="background:#fff;color:var(--green);padding:14px 32px;border-radius:10px;
-              font-weight:700;font-size:1.05rem;text-decoration:none;">
-      {{ t.hero_cta }}
-    </a>
+<!-- ══════════════════════════════ HERO ════════════════════════════════════ -->
+<div class="ff-hero">
+
+  <!-- Left: Text -->
+  <div class="ff-hero-text">
+    <div class="ff-eyebrow">🌱 India's First AI Sustainability Platform</div>
+    <h1>
+      {{ t.hero_line1 }} {{ t.hero_line2 }}<br>
+      <em>{{ t.hero_line3 }}</em>
+    </h1>
+    <p class="ff-hero-sub">{{ t.hero_sub }}</p>
+    <div class="ff-hero-btns">
+      <a href="{{ url_for('auth.register') }}" class="ff-btn-white">🚀 {{ t.hero_cta }}</a>
+      <a href="{{ url_for('foodbank.index') if current_user.is_authenticated else url_for('auth.register') }}"
+         class="ff-btn-outline">🤝 {{ t.hero_donate }}</a>
+    </div>
+  </div>
+
+  <!-- Right: Live preview cards -->
+  <div class="ff-hero-visual">
+    <div class="ff-card-glass">
+      <div class="ff-card-glass-label">🤖 Your AI Meal Plan — Today</div>
+      <div class="ff-meal-row">
+        <div class="ff-meal-info">
+          <div class="ff-meal-icon">🥣</div>
+          <div>
+            <div class="ff-meal-name">Ragi Porridge + Banana</div>
+            <div class="ff-meal-cal">Breakfast · 320 kcal</div>
+          </div>
+        </div>
+        <div class="ff-co2-pill">0.3 kg CO₂</div>
+      </div>
+      <div class="ff-meal-row">
+        <div class="ff-meal-info">
+          <div class="ff-meal-icon">🍛</div>
+          <div>
+            <div class="ff-meal-name">Dal Makhani + Brown Rice</div>
+            <div class="ff-meal-cal">Lunch · 580 kcal</div>
+          </div>
+        </div>
+        <div class="ff-co2-pill">0.8 kg CO₂</div>
+      </div>
+      <div class="ff-meal-row">
+        <div class="ff-meal-info">
+          <div class="ff-meal-icon">🥗</div>
+          <div>
+            <div class="ff-meal-name">Palak Paneer + Roti</div>
+            <div class="ff-meal-cal">Dinner · 460 kcal</div>
+          </div>
+        </div>
+        <div class="ff-co2-pill">0.6 kg CO₂</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:.72rem;color:rgba(255,255,255,.5);margin-top:12px;margin-bottom:4px;">
+        <span>Daily Carbon Score</span>
+        <span style="color:#c5e84a;">1.7 / 3.5 kg CO₂ ✓</span>
+      </div>
+      <div class="ff-pbar"><div class="ff-pbar-fill"></div></div>
+    </div>
+
+    <div class="ff-mini-cards">
+      <div class="ff-mini-card">
+        <div class="ff-mini-icon">💪</div>
+        <div class="ff-mini-lbl">Fitness Streak</div>
+        <div class="ff-mini-val">12</div>
+        <div class="ff-mini-sub">days active</div>
+      </div>
+      <div class="ff-mini-card">
+        <div class="ff-mini-icon">🍽️</div>
+        <div class="ff-mini-lbl">Meals Donated</div>
+        <div class="ff-mini-val">47</div>
+        <div class="ff-mini-sub">this month</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════ IMPACT STATS ══════════════════════════════ -->
+<div class="ff-stats ff-reveal">
+  <div class="ff-stat">
+    <div class="ff-stat-icon">🥗</div>
+    <div class="ff-stat-num" data-count="{{ stats.food_saved_kg }}">{{ stats.food_saved_kg }}</div>
+    <div class="ff-stat-lbl">{{ t.stat_food_saved }}</div>
+  </div>
+  <div class="ff-stat">
+    <div class="ff-stat-icon">🍽️</div>
+    <div class="ff-stat-num" data-count="{{ stats.meals_provided }}">{{ stats.meals_provided }}</div>
+    <div class="ff-stat-lbl">{{ t.stat_meals }}</div>
+  </div>
+  <div class="ff-stat">
+    <div class="ff-stat-icon">👥</div>
+    <div class="ff-stat-num" data-count="{{ stats.active_users }}">{{ stats.active_users }}</div>
+    <div class="ff-stat-lbl">{{ t.stat_users }}</div>
+  </div>
+  <div class="ff-stat">
+    <div class="ff-stat-icon">🌍</div>
+    <div class="ff-stat-num" data-count="{{ stats.co2_saved }}">{{ stats.co2_saved }}</div>
+    <div class="ff-stat-lbl">{{ t.stat_co2 }}</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ FEATURE BENTO ═════════════════════════════ -->
+<div class="ff-section-head ff-reveal">
+  <span class="ff-section-tag">Three Superpowers</span>
+  <h2 class="ff-section-title">{{ t.modules_title }}</h2>
+  <p class="ff-section-sub">{{ t.modules_sub }}</p>
+</div>
+
+<div class="ff-bento">
+
+  <!-- Food Bank — large card -->
+  <div class="ff-bento-card ff-bento-lg ff-reveal">
+    <div class="ff-bento-icon ff-ic-orange">🤝</div>
+    <div class="ff-bento-title">{{ t.mod_food_title }}</div>
+    <p class="ff-bento-desc">{{ t.mod_food_desc }}</p>
+    <div class="ff-map-visual">
+      <div style="font-size:.68rem;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Live Donation Map</div>
+      <div class="ff-map-dots">
+        <div class="ff-dot"></div><div class="ff-dot ff-da"></div><div class="ff-dot"></div><div class="ff-dot ff-dh"></div><div class="ff-dot"></div><div class="ff-dot"></div><div class="ff-dot ff-da"></div><div class="ff-dot"></div>
+        <div class="ff-dot ff-dh"></div><div class="ff-dot"></div><div class="ff-dot ff-da"></div><div class="ff-dot"></div><div class="ff-dot"></div><div class="ff-dot ff-da"></div><div class="ff-dot"></div><div class="ff-dot ff-dh"></div>
+        <div class="ff-dot"></div><div class="ff-dot ff-da"></div><div class="ff-dot"></div><div class="ff-dot"></div><div class="ff-dot ff-dh"></div><div class="ff-dot"></div><div class="ff-dot ff-da"></div><div class="ff-dot"></div>
+        <div class="ff-dot"></div><div class="ff-dot"></div><div class="ff-dot"></div><div class="ff-dot ff-da"></div><div class="ff-dot"></div><div class="ff-dot ff-dh"></div><div class="ff-dot"></div><div class="ff-dot"></div>
+      </div>
+      <div class="ff-map-legend">
+        <span><span class="ff-leg-dot" style="background:var(--green)"></span>Available Food</span>
+        <span><span class="ff-leg-dot" style="background:var(--amber)"></span>High Need Area</span>
+      </div>
+    </div>
+    <a href="{{ url_for('foodbank.index') }}" class="ff-bento-link">{{ t.explore }} →</a>
+  </div>
+
+  <!-- Diet Planner -->
+  <div class="ff-bento-card ff-reveal">
+    <div class="ff-bento-icon ff-ic-green">🥗</div>
+    <div class="ff-bento-title">{{ t.mod_diet_title }}</div>
+    <p class="ff-bento-desc">{{ t.mod_diet_desc }}</p>
+    <a href="{{ url_for('diet.index') }}" class="ff-bento-link">{{ t.explore }} →</a>
+  </div>
+
+  <!-- Fitness -->
+  <div class="ff-bento-card ff-reveal">
+    <div class="ff-bento-icon ff-ic-blue">💪</div>
+    <div class="ff-bento-title">{{ t.mod_ex_title }}</div>
+    <p class="ff-bento-desc">{{ t.mod_ex_desc }}</p>
+    <a href="{{ url_for('exercise.index') }}" class="ff-bento-link">{{ t.explore }} →</a>
+  </div>
+
+  <!-- Carbon Tracking -->
+  <div class="ff-bento-card ff-reveal">
+    <div class="ff-bento-icon ff-ic-green">🌍</div>
+    <div class="ff-bento-title">Carbon Tracking</div>
+    <p class="ff-bento-desc">Every meal gets a CO₂ score. Watch your environmental footprint shrink as you make smarter food choices.</p>
+  </div>
+
+  <!-- Made for India -->
+  <div class="ff-bento-card ff-reveal">
+    <div class="ff-bento-icon ff-ic-orange">🇮🇳</div>
+    <div class="ff-bento-title">Made for India</div>
+    <p class="ff-bento-desc">Telugu, Hindi, English — and South Asian cuisine built into the AI's knowledge base from day one.</p>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════ SDG ════════════════════════════════════ -->
+<div class="ff-sdg-wrap ff-reveal">
+  <span class="ff-section-tag">United Nations SDGs</span>
+  <h2 class="ff-section-title" style="margin-top:10px;">{{ t.sdg_title }}</h2>
+  <div class="ff-sdg-grid">
+    <div class="ff-sdg-badge"><span>🎯</span><p>SDG 1</p></div>
+    <div class="ff-sdg-badge"><span>🌾</span><p>SDG 2</p></div>
+    <div class="ff-sdg-badge"><span>💚</span><p>SDG 3</p></div>
+    <div class="ff-sdg-badge"><span>♻️</span><p>SDG 12</p></div>
+    <div class="ff-sdg-badge"><span>🌊</span><p>SDG 13</p></div>
+    <div class="ff-sdg-badge"><span>🤝</span><p>SDG 17</p></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ CTA ════════════════════════════════════ -->
+<div class="ff-cta ff-reveal">
+  <h2>Ready to <em>FeedForward?</em></h2>
+  <p>Join thousands making healthier, more sustainable choices every day.</p>
+  <div class="ff-cta-btns">
+    <a href="{{ url_for('auth.register') }}" class="ff-btn-white">🚀 {{ t.hero_cta }}</a>
     <a href="{{ url_for('foodbank.index') if current_user.is_authenticated else url_for('auth.register') }}"
-       style="border:2px solid #fff;color:#fff;padding:14px 32px;border-radius:10px;
-              font-weight:700;font-size:1.05rem;text-decoration:none;">
-      {{ t.hero_donate }}
-    </a>
+       class="ff-btn-outline">🤝 {{ t.hero_donate }}</a>
   </div>
 </div>
 
-<!-- IMPACT COUNTERS -->
-<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
-            gap:16px;margin-bottom:48px;">
-  <div class="card" style="text-align:center;padding:24px;border-top:4px solid #FF6B35;">
-    <div style="font-size:2rem;margin-bottom:8px;">🥗</div>
-    <div style="font-size:2rem;font-weight:800;color:#FF6B35;">{{ stats.food_saved_kg }}</div>
-    <div style="color:var(--text2);font-size:.9rem;">{{ t.stat_food_saved }}</div>
-  </div>
-  <div class="card" style="text-align:center;padding:24px;border-top:4px solid #FF6B35;">
-    <div style="font-size:2rem;margin-bottom:8px;">🍽️</div>
-    <div style="font-size:2rem;font-weight:800;color:#FF6B35;">{{ stats.meals_provided }}</div>
-    <div style="color:var(--text2);font-size:.9rem;">{{ t.stat_meals }}</div>
-  </div>
-  <div class="card" style="text-align:center;padding:24px;border-top:4px solid #1565C0;">
-    <div style="font-size:2rem;margin-bottom:8px;">👥</div>
-    <div style="font-size:2rem;font-weight:800;color:#1565C0;">{{ stats.active_users }}</div>
-    <div style="color:var(--text2);font-size:.9rem;">{{ t.stat_users }}</div>
-  </div>
-  <div class="card" style="text-align:center;padding:24px;border-top:4px solid #7B1FA2;">
-    <div style="font-size:2rem;margin-bottom:8px;">🌍</div>
-    <div style="font-size:2rem;font-weight:800;color:#7B1FA2;">{{ stats.co2_saved }}</div>
-    <div style="color:var(--text2);font-size:.9rem;">{{ t.stat_co2 }}</div>
-  </div>
-</div>
+{% endblock %}
 
-<!-- MODULES -->
-<div style="text-align:center;margin-bottom:32px;">
-  <h2 style="font-size:1.9rem;font-weight:800;color:var(--green);">{{ t.modules_title }}</h2>
-  <p style="color:var(--text2);">{{ t.modules_sub }}</p>
-</div>
-
-<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
-            gap:20px;margin-bottom:48px;">
-  <div class="card" style="border-top:4px solid #4CAF50;padding:24px;">
-    <div style="font-size:2.2rem;margin-bottom:12px;">🥗</div>
-    <h3 style="font-weight:800;font-size:1.1rem;margin-bottom:8px;color:var(--green);">
-      {{ t.mod_diet_title }}
-    </h3>
-    <p style="color:var(--text2);font-size:.9rem;margin-bottom:16px;">{{ t.mod_diet_desc }}</p>
-    <a href="{{ url_for('diet.index') }}" class="btn-primary"
-       style="background:#4CAF50;font-size:.88rem;padding:8px 20px;">
-      {{ t.explore }}
-    </a>
-  </div>
-  <div class="card" style="border-top:4px solid #1976D2;padding:24px;">
-    <div style="font-size:2.2rem;margin-bottom:12px;">💪</div>
-    <h3 style="font-weight:800;font-size:1.1rem;margin-bottom:8px;color:var(--green);">
-      {{ t.mod_ex_title }}
-    </h3>
-    <p style="color:var(--text2);font-size:.9rem;margin-bottom:16px;">{{ t.mod_ex_desc }}</p>
-    <a href="{{ url_for('exercise.index') }}" class="btn-primary"
-       style="background:#1976D2;font-size:.88rem;padding:8px 20px;">
-      {{ t.explore }}
-    </a>
-  </div>
-  <div class="card" style="border-top:4px solid #F57C00;padding:24px;">
-    <div style="font-size:2.2rem;margin-bottom:12px;">🤝</div>
-    <h3 style="font-weight:800;font-size:1.1rem;margin-bottom:8px;color:var(--green);">
-      {{ t.mod_food_title }}
-    </h3>
-    <p style="color:var(--text2);font-size:.9rem;margin-bottom:16px;">{{ t.mod_food_desc }}</p>
-    <a href="{{ url_for('foodbank.index') }}" class="btn-primary"
-       style="background:#F57C00;font-size:.88rem;padding:8px 20px;">
-      {{ t.explore }}
-    </a>
-  </div>
-</div>
-
-<!-- SDG BADGES -->
-<div class="card" style="text-align:center;margin-bottom:36px;padding:28px;">
-  <h3 style="color:var(--green);font-weight:800;margin-bottom:16px;">{{ t.sdg_title }}</h3>
-  <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-    {% for sdg in ['🎯 SDG 1','🌿 SDG 2','💚 SDG 3','♻️ SDG 12','🌊 SDG 13','🤝 SDG 17'] %}
-    <span class="badge-green" style="font-size:.85rem;">{{ sdg }}</span>
-    {% endfor %}
-  </div>
-</div>
-
-<!-- CTA BANNER -->
-<div style="background:var(--green);border-radius:16px;padding:48px;
-            text-align:center;margin-bottom:24px;">
-  <h2 style="font-size:1.8rem;font-weight:800;margin-bottom:10px;color:#fff;">
-    Ready to FeedForward?
-  </h2>
-  <p style="opacity:.9;margin-bottom:24px;color:#fff;">
-    Join thousands making healthier, more sustainable choices every day.
-  </p>
-  <a href="{{ url_for('auth.register') }}"
-     style="background:#fff;color:var(--green);padding:14px 36px;
-            border-radius:10px;font-weight:700;font-size:1.05rem;
-            text-decoration:none;display:inline-block;">
-    {{ t.hero_cta }}
-  </a>
-</div>
-
+{% block scripts %}
+<script>
+  /* Scroll reveal */
+  var ffObs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e,i){
+      if(e.isIntersecting){ setTimeout(function(){ e.target.classList.add('ff-vis'); }, i*90); }
+    });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.ff-reveal').forEach(function(el){ ffObs.observe(el); });
+</script>
 {% endblock %}
